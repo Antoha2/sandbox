@@ -1,0 +1,36 @@
+version: '3'
+services:
+
+ 
+  auth:
+    container_name: test
+    image: golang:1.21.4
+  
+    depends_on:
+       - postgres
+    environment:
+      ENVIRONMENT: development
+    volumes:
+      - ./:/app/
+    working_dir: /app
+    expose:
+      - 8180
+    ports:
+      - '8180:8180'
+    command: >
+     bash -c "go get 
+     && go run ./cmd/main.go --config=./config/config_local.yaml"
+
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+
+    environment:
+     POSTGRES_DB: test
+     POSTGRES_USER:  user
+     POSTGRES_PASSWORD: user
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./../db:/var/lib/postgresql
+
