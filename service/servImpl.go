@@ -15,42 +15,37 @@ func (s *servImpl) DelUser(id int) error {
 }
 
 func (s *servImpl) AddUser(user User) error {
+	var err error
+
 	repUser := new(repository.RepUser)
 	repUser.Name = user.Name
 	repUser.SurName = user.SurName
 	repUser.Patronymic = user.Patronymic
 
-	log.Println(user.Name)
-
-	reqAge := &Query{
+	req := &Query{
 		Name: user.Name,
-		Addr: "https://api.agify.io/?name=",
+		Addr: s.cfg.AddrAge,
 	}
-	log.Println(reqAge)
-	age, err := s.getAge.GetParam(reqAge)
+
+	repUser.Age, err = s.ageClient.GetAge(req)
 	if err != nil {
 		log.Println(err)
 		return err
 	}
-	log.Println(age)
+	req.Addr = s.cfg.AddrGender
+	repUser.Gender, err = s.genderClient.GetGender(req)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	req.Addr = s.cfg.AddrNationality
+	repUser.Nationality, err = s.nationalityClient.GetNationality(req)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	log.Println("!!!!!!!!!!!!!!!!!!!!!!!!!!!! -", repUser)
 
-	// repUser.Age, err = strconv.Atoi(age)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return err
-	// }
-
-	// repUser.Gender, err = s.getAge.GetParam(user.Name)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return err
-	// }
-	// repUser.Nationality, err = s.getAge.GetParam(user.Name)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return err
-	// }
-	log.Println(repUser)
 	return nil
 }
 

@@ -12,18 +12,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (wImpl *webImpl) StartHTTP() error {
+func (w *webImpl) StartHTTP() error {
 	router := gin.Default()
-	router.GET("/users/", wImpl.getUserHandler)
-	router.POST("/users/", wImpl.addUserHandler)
-	router.DELETE("/users/:id", wImpl.delUserHandler)
-	router.PATCH("/users/", wImpl.updateUserHandler)
+	router.GET("/users/", w.getUserHandler)
+	router.POST("/users/", w.addUserHandler)
+	router.DELETE("/users/:id", w.delUserHandler)
+	router.PATCH("/users/", w.updateUserHandler)
 	router.Run()
 	return nil
 }
 
 //get
-func (wImpl *webImpl) getUserHandler(c *gin.Context) {
+func (w *webImpl) getUserHandler(c *gin.Context) {
 	q := c.Request.URL.Query()
 	age, err := strconv.Atoi(q.Get("age"))
 	if err != nil {
@@ -39,7 +39,7 @@ func (wImpl *webImpl) getUserHandler(c *gin.Context) {
 		Nationality: q.Get("nationality"),
 	}
 
-	err = wImpl.service.GetUsers(user)
+	err = w.service.GetUsers(user)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
@@ -49,7 +49,7 @@ func (wImpl *webImpl) getUserHandler(c *gin.Context) {
 }
 
 //add
-func (wImpl *webImpl) addUserHandler(c *gin.Context) {
+func (w *webImpl) addUserHandler(c *gin.Context) {
 
 	user := new(service.User)
 	if err := c.BindJSON(&user); err != nil {
@@ -57,7 +57,7 @@ func (wImpl *webImpl) addUserHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	err := wImpl.service.AddUser(*user)
+	err := w.service.AddUser(*user)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
@@ -67,14 +67,14 @@ func (wImpl *webImpl) addUserHandler(c *gin.Context) {
 }
 
 //del
-func (wImpl *webImpl) delUserHandler(c *gin.Context) {
+func (w *webImpl) delUserHandler(c *gin.Context) {
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	err = wImpl.service.DelUser(id)
+	err = w.service.DelUser(id)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
@@ -84,14 +84,14 @@ func (wImpl *webImpl) delUserHandler(c *gin.Context) {
 }
 
 //update
-func (wImpl *webImpl) updateUserHandler(c *gin.Context) {
+func (w *webImpl) updateUserHandler(c *gin.Context) {
 	user := new(service.User)
 	if err := c.BindJSON(&user); err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	err := wImpl.service.UpdateUser(*user)
+	err := w.service.UpdateUser(*user)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
@@ -101,7 +101,7 @@ func (wImpl *webImpl) updateUserHandler(c *gin.Context) {
 }
 
 //декодеры JSON
-func (wImpl *webImpl) Decoder(r *http.Request, user *service.User) error {
+func (w *webImpl) Decoder(r *http.Request, user *service.User) error {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {

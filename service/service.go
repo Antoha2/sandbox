@@ -37,11 +37,19 @@ type servImpl struct {
 	nationalityClient NationalityProvider
 }
 
-func NewServ(Rep *repository.Rep, cfg *config.Config, log *slog.Logger, age provider.ageImpl) *servImpl {
+func NewServ(Rep *repository.Rep,
+	cfg *config.Config,
+	log *slog.Logger,
+	ageClient AgeProvider,
+	genderClient GenderProvider,
+	nationalityClient NationalityProvider) *servImpl {
 	return &servImpl{
-		rep: Rep,
-		log: log,
-		cfg: cfg,
+		rep:               Rep,
+		log:               log,
+		cfg:               cfg,
+		ageClient:         ageClient,
+		genderClient:      genderClient,
+		nationalityClient: nationalityClient,
 	}
 }
 

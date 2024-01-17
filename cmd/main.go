@@ -9,7 +9,9 @@ import (
 
 	"github.com/Antoha2/sandbox/cmd/logger"
 	"github.com/Antoha2/sandbox/config"
-	provider "github.com/Antoha2/sandbox/providers/age"
+	providerAge "github.com/Antoha2/sandbox/providers/age"
+	providerGender "github.com/Antoha2/sandbox/providers/gender"
+	providerNat "github.com/Antoha2/sandbox/providers/nationality"
 	"github.com/Antoha2/sandbox/repository"
 	"github.com/Antoha2/sandbox/service"
 	transport "github.com/Antoha2/sandbox/transport/http"
@@ -31,9 +33,9 @@ func main() {
 }
 
 func Run() {
-	cfg := config.NewCfg()
+	//cfg := config.NewCfg()
+	cfg := config.MustLoad()
 	slog := logger.SetupLogger(logger.EnvLocal)
-
 	dbx, err := initDb(cfg)
 	if err != nil {
 		fmt.Println(err)
@@ -41,8 +43,10 @@ func Run() {
 	}
 
 	rep := repository.NewRep(dbx)
-	getAge := provider.NewGetAge(cfg)
-	serv := service.NewServ(rep, cfg, slog, getAge)
+	getAge := providerAge.NewGetAge()
+	getGender := providerGender.NewGetGender()
+	getNat := providerNat.NewGetNat()
+	serv := service.NewServ(rep, cfg, slog, getAge, getGender, getNat) //, getAge
 	trans := transport.NewWeb(serv, slog, cfg)
 
 	go trans.StartHTTP()
@@ -81,6 +85,6 @@ func initDb(cfg *config.Config) (*sqlx.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("4 error to ping connection pool: %v", err)
 	}
-	log.Printf("Подключение к базе данных на http://127.0.0.1:%d\n", cfg.DBConfig.Port)
+	log.Printf("Подключение к базе данных на http://127.0.0.1:%v\n", cfg.DBConfig.Port)
 	return dbx, nil
 }
