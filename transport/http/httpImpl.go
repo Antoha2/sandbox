@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,14 +26,14 @@ func (w *webImpl) StartHTTP() error {
 
 //get user
 func (w *webImpl) getUserHandler(c *gin.Context) {
-
+	ctx := context.Background()
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	user := new(service.User)
-	*user, err = w.service.GetUser(id)
+	user, err = w.service.GetUser(ctx, id)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
@@ -43,6 +44,7 @@ func (w *webImpl) getUserHandler(c *gin.Context) {
 
 //get users
 func (w *webImpl) getUsersHandler(c *gin.Context) {
+	ctx := context.Background()
 	// const op = "getUser"
 	// w.log.With()
 	// log := w.log.With(
@@ -78,7 +80,7 @@ func (w *webImpl) getUsersHandler(c *gin.Context) {
 			//return
 		}
 	}
-	userQuery := service.GetQueryFilter{
+	userQuery := &service.GetQueryFilter{
 
 		Name:        q.Get("name"),
 		SurName:     q.Get("surname"),
@@ -89,7 +91,7 @@ func (w *webImpl) getUsersHandler(c *gin.Context) {
 		Offset:      offset,
 		Limit:       limit,
 	}
-	users, err := w.service.GetUsers(userQuery)
+	users, err := w.service.GetUsers(ctx, userQuery)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
@@ -100,15 +102,16 @@ func (w *webImpl) getUsersHandler(c *gin.Context) {
 
 //add
 func (w *webImpl) addUserHandler(c *gin.Context) {
-
-	var user, respUser service.User
+	ctx := context.Background()
+	user := &service.User{}
+	respUser := &service.User{}
 
 	if err := c.BindJSON(&user); err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	respUser, err := w.service.AddUser(user)
+	respUser, err := w.service.AddUser(ctx, user)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
@@ -119,14 +122,14 @@ func (w *webImpl) addUserHandler(c *gin.Context) {
 
 //del
 func (w *webImpl) delUserHandler(c *gin.Context) {
-
+	ctx := context.Background()
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	err = w.service.DelUser(id)
+	err = w.service.DelUser(ctx, id)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
@@ -137,6 +140,7 @@ func (w *webImpl) delUserHandler(c *gin.Context) {
 
 //update
 func (w *webImpl) updateUserHandler(c *gin.Context) {
+	ctx := context.Background()
 	user := new(service.User)
 	respUser := new(service.User)
 	id, err := strconv.Atoi(c.Param("id"))
@@ -150,7 +154,7 @@ func (w *webImpl) updateUserHandler(c *gin.Context) {
 		return
 	}
 	user.Id = id
-	*respUser, err = w.service.UpdateUser(*user)
+	respUser, err = w.service.UpdateUser(ctx, user)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())

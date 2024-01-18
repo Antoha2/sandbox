@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/Antoha2/sandbox/config"
@@ -8,11 +9,11 @@ import (
 )
 
 type Repository interface {
-	AddUser(user repository.RepUser) (int, error)
-	DelUser(id int) error
-	GetUser(id int) error
-	GetUsers(filter repository.RepQueryFilter) ([]*repository.RepUser, error)
-	UpdateUser(user repository.RepUser) (repository.RepUser, error)
+	GetUser(ctx context.Context, id int) error
+	GetUsers(ctx context.Context, filter *repository.RepQueryFilter) ([]*repository.RepUser, error)
+	AddUser(ctx context.Context, user *repository.RepUser) (int, error)
+	DelUser(ctx context.Context, id int) error
+	UpdateUser(ctx context.Context, user *repository.RepUser) (*repository.RepUser, error)
 	//UserSaver(ctx context.Context, email string, passHash []byte) (uid int64, err error)
 	//UserProvider(ctx context.Context, email string) (models.User, error)
 }

@@ -13,11 +13,11 @@ import (
 )
 
 type Service interface {
-	GetUsers(user service.GetQueryFilter) ([]*service.User, error)
-	DelUser(id int) error
-	GetUser(id int) (service.User, error)
-	AddUser(user service.User) (service.User, error)
-	UpdateUser(user service.User) (service.User, error)
+	GetUsers(ctx context.Context, filter *service.GetQueryFilter) ([]*service.User, error)
+	GetUser(ctx context.Context, id int) (*service.User, error)
+	DelUser(ctx context.Context, id int) error
+	AddUser(ctx context.Context, user *service.User) (*service.User, error)
+	UpdateUser(ctx context.Context, user *service.User) (*service.User, error)
 }
 
 type webImpl struct {

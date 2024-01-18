@@ -1,14 +1,15 @@
 package service
 
 import (
+	"context"
 	"log"
 
 	"github.com/Antoha2/sandbox/repository"
 )
 
-func (s *servImpl) GetUsers(filter GetQueryFilter) ([]*User, error) {
+func (s *servImpl) GetUsers(ctx context.Context, filter *GetQueryFilter) ([]*User, error) {
 
-	readFilter := repository.RepQueryFilter{
+	readFilter := &repository.RepQueryFilter{
 		Id:          filter.Id,
 		Name:        filter.Name,
 		SurName:     filter.SurName,
@@ -19,7 +20,7 @@ func (s *servImpl) GetUsers(filter GetQueryFilter) ([]*User, error) {
 		Limit:       filter.Limit,
 		Offset:      filter.Offset,
 	}
-	repUsers, err := s.rep.GetUsers(readFilter)
+	repUsers, err := s.rep.GetUsers(ctx, readFilter)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -36,20 +37,17 @@ func (s *servImpl) GetUsers(filter GetQueryFilter) ([]*User, error) {
 			Nationality: user.Nationality,
 		}
 		users[index] = t
-		// log.Println("!!!!!!!", user)
-		//log.Println(index, users[index])
 	}
 	log.Println(users)
 	return users, nil
 }
 
-func (s *servImpl) GetUser(id int) (User, error) {
-	//repUser := new(repository.RepUser)
+func (s *servImpl) GetUser(ctx context.Context, id int) (*User, error) {
 
-	repUser, err := s.rep.GetUser(id)
+	repUser, err := s.rep.GetUser(ctx, id)
 	if err != nil {
 		log.Println(err)
-		//return err
+		//return , err
 	}
 	user := &User{
 		Id:          repUser.Id,
@@ -60,13 +58,12 @@ func (s *servImpl) GetUser(id int) (User, error) {
 		Gender:      repUser.Gender,
 		Nationality: repUser.Nationality,
 	}
-	log.Println("!!!!!!!!!!!!!!!!!!!!!!", user)
-	return *user, nil
+	return user, nil
 }
 
-func (s *servImpl) DelUser(id int) error {
+func (s *servImpl) DelUser(ctx context.Context, id int) error {
 
-	err := s.rep.DelUser(id)
+	err := s.rep.DelUser(ctx, id)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -75,13 +72,14 @@ func (s *servImpl) DelUser(id int) error {
 	return nil
 }
 
-func (s *servImpl) AddUser(user User) (User, error) {
+func (s *servImpl) AddUser(ctx context.Context, user *User) (*User, error) {
 	var err error
-	var respUser User
-	var reposUser repository.RepUser
-	reposUser.Name = user.Name
-	reposUser.SurName = user.SurName
-	reposUser.Patronymic = user.Patronymic
+
+	reposUser := &repository.RepUser{
+		Name:       user.Name,
+		SurName:    user.SurName,
+		Patronymic: user.Patronymic,
+	}
 
 	req := &Query{
 		Name: user.Name,
@@ -91,39 +89,40 @@ func (s *servImpl) AddUser(user User) (User, error) {
 	reposUser.Age, err = s.ageClient.GetAge(req)
 	if err != nil {
 		log.Println(err)
-		return respUser, err
+		return user, err
 	}
 	req.Addr = s.cfg.AddrGender
 	reposUser.Gender, err = s.genderClient.GetGender(req)
 	if err != nil {
 		log.Println(err)
-		return respUser, err
+		return user, err
 	}
 	req.Addr = s.cfg.AddrNationality
 	reposUser.Nationality, err = s.nationalityClient.GetNationality(req)
 	if err != nil {
 		log.Println(err)
-		return respUser, err
+		return user, err
 	}
 
-	id, err := s.rep.AddUser(reposUser)
+	id, err := s.rep.AddUser(ctx, reposUser)
 	if err != nil {
 		log.Println(err)
-		return respUser, err
+		return user, err
 	}
 
-	respUser.Id = id
-	respUser.Name = user.Name
-	respUser.SurName = user.SurName
-	respUser.Patronymic = user.Patronymic
-	respUser.Age = reposUser.Age
-	respUser.Gender = reposUser.Gender
-	respUser.Nationality = reposUser.Nationality
-
+	respUser := &User{
+		Id:          id,
+		Name:        user.Name,
+		SurName:     user.SurName,
+		Patronymic:  user.Patronymic,
+		Age:         reposUser.Age,
+		Gender:      reposUser.Gender,
+		Nationality: reposUser.Nationality,
+	}
 	return respUser, nil
 }
 
-func (s *servImpl) UpdateUser(user User) (User, error) {
+func (s *servImpl) UpdateUser(ctx context.Context, user *User) (*User, error) {
 
 	reposUser := &repository.RepUser{
 		Id:          user.Id,
@@ -135,7 +134,7 @@ func (s *servImpl) UpdateUser(user User) (User, error) {
 		Nationality: user.Nationality,
 	}
 
-	reposUser, err := s.rep.UpdateUser(reposUser)
+	reposUser, err := s.rep.UpdateUser(ctx, reposUser)
 	if err != nil {
 		log.Println(err)
 		return user, err
@@ -150,5 +149,5 @@ func (s *servImpl) UpdateUser(user User) (User, error) {
 		Gender:      reposUser.Gender,
 		Nationality: reposUser.Nationality,
 	}
-	return *respUser, nil
+	return respUser, nil
 }

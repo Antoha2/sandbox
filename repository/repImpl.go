@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -8,7 +9,7 @@ import (
 )
 
 //add user
-func (r *Rep) AddUser(user RepUser) (int, error) {
+func (r *Rep) AddUser(ctx context.Context, user *RepUser) (int, error) {
 
 	query := "INSERT INTO users (name, surname, patronymic, age, gender, nationality) values ($1, $2, $3, $4, $5, $6) RETURNING id"
 	row := r.DB.QueryRow(query, user.Name, user.SurName, user.Patronymic, user.Age, user.Gender, user.Nationality)
@@ -20,7 +21,7 @@ func (r *Rep) AddUser(user RepUser) (int, error) {
 }
 
 //del user
-func (r *Rep) DelUser(id int) error {
+func (r *Rep) DelUser(ctx context.Context, id int) error {
 
 	query := "DELETE FROM users WHERE id = $1"
 	stmtDel, err := r.DB.Exec(query, id)
@@ -35,7 +36,7 @@ func (r *Rep) DelUser(id int) error {
 }
 
 //get users
-func (r *Rep) GetUsers(filter RepQueryFilter) ([]*RepUser, error) {
+func (r *Rep) GetUsers(ctx context.Context, filter *RepQueryFilter) ([]*RepUser, error) {
 
 	users := make([]*RepUser, 0)
 	buildQuery, args := buildQueryConstrain(filter)
@@ -59,7 +60,7 @@ func (r *Rep) GetUsers(filter RepQueryFilter) ([]*RepUser, error) {
 }
 
 //get user
-func (r *Rep) GetUser(id int) (RepUser, error) {
+func (r *Rep) GetUser(ctx context.Context, id int) (RepUser, error) {
 	user := new(RepUser)
 	query := "SELECT * FROM users WHERE id = $1"
 	row := r.DB.QueryRow(query, id)
@@ -71,7 +72,7 @@ func (r *Rep) GetUser(id int) (RepUser, error) {
 }
 
 //update user
-func (r *Rep) UpdateUser(user *RepUser) (*RepUser, error) {
+func (r *Rep) UpdateUser(ctx context.Context, user *RepUser) (*RepUser, error) {
 	query := "update users set name=$2, surname=$3, patronymic=$4, age=$5, gender=$6, nationality=$7 where id=$1"
 	stmtUp, err := r.DB.Exec(query, user.Id, user.Name, user.SurName, user.Patronymic, user.Age, user.Gender, user.Nationality)
 	if err == nil {
@@ -85,7 +86,7 @@ func (r *Rep) UpdateUser(user *RepUser) (*RepUser, error) {
 }
 
 //build query string
-func buildQueryConstrain(filter RepQueryFilter) (string, []any) {
+func buildQueryConstrain(filter *RepQueryFilter) (string, []any) {
 	i := 1
 	constrain := make([]string, 0, 6)
 	args := make([]any, 0, 6)
