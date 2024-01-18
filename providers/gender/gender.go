@@ -10,7 +10,6 @@ import (
 )
 
 type genderImpl struct {
-	//ageClient service.AgeProvider
 }
 
 func NewGetGender() *genderImpl {

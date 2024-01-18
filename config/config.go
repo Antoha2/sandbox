@@ -5,7 +5,7 @@ import (
 )
 
 type Config struct {
-	//Env             string     `yaml:"env" env-default:"local"`
+	Env      string     `yaml:"env" env:"ENV" env-default:"local"`
 	HTTP     HTTPConfig `yaml:"http" `
 	DBConfig DBConfig   `yaml:"postgres"`
 	//MigrationsPath  string

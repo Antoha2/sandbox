@@ -50,6 +50,7 @@ func (s *natImpl) GetNationality(r *service.Query) (string, error) {
 		return "", err
 	}
 
+	//выбор одного варианта с наибольшей вероятностью
 	var probability float32
 	var country string
 	for _, v := range restResponse.Country {

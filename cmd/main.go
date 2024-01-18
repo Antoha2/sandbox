@@ -33,21 +33,21 @@ func main() {
 }
 
 func Run() {
-	//cfg := config.NewCfg()
+
 	cfg := config.MustLoad()
-	slog := logger.SetupLogger(logger.EnvLocal)
+	slog := logger.SetupLogger(cfg.Env)
 	dbx, err := initDb(cfg)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	rep := repository.NewRep(dbx)
+	rep := repository.NewRep(slog, dbx)
 	getAge := providerAge.NewGetAge()
 	getGender := providerGender.NewGetGender()
 	getNat := providerNat.NewGetNat()
-	serv := service.NewServ(rep, cfg, slog, getAge, getGender, getNat) //, getAge
-	trans := transport.NewWeb(serv, slog, cfg)
+	serv := service.NewServ(cfg, slog, rep, getAge, getGender, getNat) //, getAge
+	trans := transport.NewWeb(cfg, slog, serv)
 
 	go trans.StartHTTP()
 

@@ -13,21 +13,22 @@ import (
 )
 
 type Service interface {
-	GetUsers(user service.User) error
+	GetUsers(user service.GetQueryFilter) ([]*service.User, error)
 	DelUser(id int) error
-	AddUser(user service.User) error
-	UpdateUser(user service.User) error
+	GetUser(id int) (service.User, error)
+	AddUser(user service.User) (service.User, error)
+	UpdateUser(user service.User) (service.User, error)
 }
 
 type webImpl struct {
+	cfg     *config.Config
+	log     *slog.Logger
 	service Service
 	server  *http.Server
-	log     *slog.Logger
-	cfg     *config.Config
 	port    int
 }
 
-func NewWeb(service Service, log *slog.Logger, cfg *config.Config) *webImpl {
+func NewWeb(cfg *config.Config, log *slog.Logger, service Service) *webImpl {
 	HTTPport, err := strconv.Atoi(cfg.HTTP.HostAddr)
 	if err != nil {
 		fmt.Println(err)

@@ -19,7 +19,8 @@ services:
       - '8180:8180'
     command: >
      bash -c "go get 
-     && go run ./cmd/main.go --config=./config/config_local.yaml"
+     && go run ./cmd/main.go"
+    # --config=./config/config_local.yaml"
 
   postgres:
     container_name: postgres

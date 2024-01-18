@@ -8,7 +8,11 @@ import (
 )
 
 type Repository interface {
-	AddUser(user repository.RepUser) error
+	AddUser(user repository.RepUser) (int, error)
+	DelUser(id int) error
+	GetUser(id int) error
+	GetUsers(filter repository.RepQueryFilter) ([]*repository.RepUser, error)
+	UpdateUser(user repository.RepUser) (repository.RepUser, error)
 	//UserSaver(ctx context.Context, email string, passHash []byte) (uid int64, err error)
 	//UserProvider(ctx context.Context, email string) (models.User, error)
 }
@@ -37,9 +41,10 @@ type servImpl struct {
 	nationalityClient NationalityProvider
 }
 
-func NewServ(Rep *repository.Rep,
+func NewServ(
 	cfg *config.Config,
 	log *slog.Logger,
+	Rep *repository.Rep,
 	ageClient AgeProvider,
 	genderClient GenderProvider,
 	nationalityClient NationalityProvider) *servImpl {
@@ -63,7 +68,7 @@ type User struct {
 	Nationality string `json:"nationality"`
 }
 
-type GetQueryUser struct {
+type GetQueryFilter struct {
 	Id          int    `json:"id"`
 	Name        string `json:"name"`
 	SurName     string `json:"surname"`
@@ -71,5 +76,6 @@ type GetQueryUser struct {
 	Age         int    `json:"age"`
 	Gender      string `json:"gender"`
 	Nationality string `json:"nationality"`
-	Page        int
+	Offset      int    `json:"offset"`
+	Limit       int    `json:"limit"`
 }

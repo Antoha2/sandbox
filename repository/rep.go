@@ -1,16 +1,20 @@
 package repository
 
 import (
+	"log/slog"
+
 	"github.com/jmoiron/sqlx"
 )
 
 type Rep struct {
-	DB *sqlx.DB
+	log *slog.Logger
+	DB  *sqlx.DB
 }
 
-func NewRep(dbx *sqlx.DB) *Rep {
+func NewRep(log *slog.Logger, dbx *sqlx.DB) *Rep {
 	return &Rep{
-		DB: dbx,
+		log: log,
+		DB:  dbx,
 	}
 }
 
@@ -22,4 +26,16 @@ type RepUser struct {
 	Age         int
 	Gender      string
 	Nationality string
+}
+
+type RepQueryFilter struct {
+	Id          int
+	Name        string
+	SurName     string
+	Patronymic  string
+	Age         int
+	Gender      string
+	Nationality string
+	Offset      int
+	Limit       int
 }
