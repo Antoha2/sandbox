@@ -20,12 +20,13 @@ type Service interface {
 	UpdateUser(ctx context.Context, user *service.User) (*service.User, error)
 }
 
+// убрать web из переменных, лучше просто api
 type webImpl struct {
 	cfg     *config.Config
 	log     *slog.Logger
 	service Service
 	server  *http.Server
-	port    int
+	port    int // зачем нужен порт если уже есть конфиг в котором есть порт
 }
 
 func NewWeb(cfg *config.Config, log *slog.Logger, service Service) *webImpl {
@@ -42,7 +43,7 @@ func NewWeb(cfg *config.Config, log *slog.Logger, service Service) *webImpl {
 	}
 }
 
-func (wImpl *webImpl) Stop() {
+func (wImpl *webImpl) Stop() { // Receiver names are different
 
 	if err := wImpl.server.Shutdown(context.TODO()); err != nil {
 		panic(err) // failure/timeout shutting down the server gracefully

@@ -8,6 +8,8 @@ import (
 	"github.com/Antoha2/sandbox/repository"
 )
 
+// вообще все кроме cmd надо в папку интернел перенести
+
 type Repository interface {
 	GetUser(ctx context.Context, id int) error
 	GetUsers(ctx context.Context, filter *repository.RepQueryFilter) ([]*repository.RepUser, error)
@@ -20,11 +22,11 @@ type Repository interface {
 
 type Query struct {
 	Name string
-	Addr string
+	Addr string // это не должно быть здесь
 }
 
 type AgeProvider interface {
-	GetAge(request *Query) (int, error)
+	GetAge(request *Query) (int, error) // первый аргумент всегда контекст
 }
 type GenderProvider interface {
 	GetGender(request *Query) (string, error)
@@ -45,7 +47,7 @@ type servImpl struct {
 func NewServ(
 	cfg *config.Config,
 	log *slog.Logger,
-	Rep *repository.Rep,
+	Rep *repository.Rep, // c маленькой
 	ageClient AgeProvider,
 	genderClient GenderProvider,
 	nationalityClient NationalityProvider) *servImpl {
@@ -69,7 +71,7 @@ type User struct {
 	Nationality string `json:"nationality"`
 }
 
-type GetQueryFilter struct {
+type GetQueryFilter struct { // QueryUsersFilter
 	Id          int    `json:"id"`
 	Name        string `json:"name"`
 	SurName     string `json:"surname"`

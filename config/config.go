@@ -27,7 +27,7 @@ type HTTPConfig struct {
 	HostAddr string `yaml:"httpport" env:"HTTP_PORT" env-default:"8080"`
 }
 
-//загрузка конфига из .env
+// загрузка конфига из .env
 func MustLoad() *Config {
 	var cfg Config
 	if err := cleanenv.ReadEnv(&cfg); err != nil {

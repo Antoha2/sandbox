@@ -101,13 +101,13 @@ func (s *servImpl) AddUser(ctx context.Context, user *User) (*User, error) {
 	reposUser.Nationality, err = s.nationalityClient.GetNationality(req)
 	if err != nil {
 		log.Println(err)
-		return user, err
+		return user, err // произошла ошибка, не надо юзера возвращать, nil надо
 	}
 
 	id, err := s.rep.AddUser(ctx, reposUser)
 	if err != nil {
 		log.Println(err)
-		return user, err
+		return user, err // произошла ошибка, не надо юзера возвращать, nil надо
 	}
 
 	respUser := &User{

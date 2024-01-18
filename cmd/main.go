@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"os/signal"
@@ -18,10 +19,10 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
-	"github.com/joho/godotenv"
 )
 
 func init() {
+	// убрать это из инит и перенесть мастлоад
 	// loads values from .env into the system
 	if err := godotenv.Load(); err != nil {
 		log.Print("No .env file found")
@@ -37,12 +38,13 @@ func Run() {
 	cfg := config.MustLoad()
 	slog := logger.SetupLogger(cfg.Env)
 	dbx, err := initDb(cfg)
-	if err != nil {
+	if err != nil { // для единообразия лучше проверку убрать в функцию, и назвать ее мастинитдб
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	rep := repository.NewRep(slog, dbx)
+	// переменные здесь должны быть существительными
 	getAge := providerAge.NewGetAge()
 	getGender := providerGender.NewGetGender()
 	getNat := providerNat.NewGetNat()
@@ -72,19 +74,21 @@ func initDb(cfg *config.Config) (*sqlx.DB, error) {
 
 	connConfig, err := pgx.ParseConfig(connString)
 	if err != nil {
-		return nil, fmt.Errorf("1 failed to parse config: %v", err)
+		// добавлять инфу в ошибку лучше через errors.Wrap()
+		return nil, fmt.Errorf("1 failed to parse config: %v", err) // что значит 1)??
 	}
 
 	// Make connections
 	dbx, err := sqlx.Open("pgx", stdlib.RegisterConnConfig(connConfig))
 	if err != nil {
-		return nil, fmt.Errorf("2 failed to create connection db: %v", err)
+		return nil, fmt.Errorf("2 failed to create connection db: %v", err) // что значит 2)?? плохая ошибка, нужна конкретика
 	}
 
 	err = dbx.Ping()
 	if err != nil {
-		return nil, fmt.Errorf("4 error to ping connection pool: %v", err)
+		return nil, fmt.Errorf("4 error to ping connection pool: %v", err) // через wrap, здесь и во всех других местах
 	}
+	// все принты должны быть через логер slog
 	log.Printf("Подключение к базе данных на http://127.0.0.1:%v\n", cfg.DBConfig.Port)
 	return dbx, nil
 }

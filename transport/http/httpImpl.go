@@ -20,19 +20,21 @@ func (w *webImpl) StartHTTP() error {
 	router.POST("/users/", w.addUserHandler)      //add user
 	router.DELETE("/users/:id", w.delUserHandler) //del user
 	router.PUT("/users/:id", w.updateUserHandler) //update user
-	router.Run()
+	router.Run()                                  // обработка ошибки
 	return nil
 }
 
-//get user
+// get user
 func (w *webImpl) getUserHandler(c *gin.Context) {
+	// зачем ты создаешь новый контекст?? есть же от джина его и используй
 	ctx := context.Background()
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		log.Println(err)
-		return
+		log.Println(err) // slog!!
+		return           // надо 400 возвращать
 	}
-	user := new(service.User)
+	user := new(service.User) // не надо так делать, зачем зря выделять память а потом сразу переписывать
 	user, err = w.service.GetUser(ctx, id)
 	if err != nil {
 		log.Println(err)
@@ -42,7 +44,7 @@ func (w *webImpl) getUserHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-//get users
+// get users
 func (w *webImpl) getUsersHandler(c *gin.Context) {
 	ctx := context.Background()
 	// const op = "getUser"
@@ -53,15 +55,19 @@ func (w *webImpl) getUsersHandler(c *gin.Context) {
 	// )
 
 	// log.Info("attempting to login user")
+	// дефолтные значения на уровень сервиса и вынести к константы
 	age := 0
 	limit := 100
 	offset := 0
 	var err error
 	q := c.Request.URL.Query()
 
+	// по хорошему все стринги тоже нужно в константы
+	// не надо два раза вызывать одну и туже функцию , например q.Get("age")
 	if q.Get("age") != "" {
 		age, err = strconv.Atoi(q.Get("age"))
 		if err != nil {
+			// юзер возможно просто не передал age в запросе а ты сразу за ошибку считаешь
 			log.Println(err)
 			//return
 		}
@@ -100,15 +106,15 @@ func (w *webImpl) getUsersHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-//add
+// add
 func (w *webImpl) addUserHandler(c *gin.Context) {
 	ctx := context.Background()
-	user := &service.User{}
-	respUser := &service.User{}
+	user := &service.User{}     // единообразие!! через new
+	respUser := &service.User{} // это лишнее выделение памяти, эта строка вообще не нужна
 
 	if err := c.BindJSON(&user); err != nil {
 		log.Println(err)
-		c.JSON(http.StatusInternalServerError, err.Error())
+		c.JSON(http.StatusInternalServerError, err.Error()) // это 400 а не 500
 		return
 	}
 	respUser, err := w.service.AddUser(ctx, user)
@@ -117,16 +123,16 @@ func (w *webImpl) addUserHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, respUser)
+	c.JSON(http.StatusCreated, respUser) // 201, а вот это хорошо
 }
 
-//del
+// del
 func (w *webImpl) delUserHandler(c *gin.Context) {
 	ctx := context.Background()
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Println(err)
-		return
+		return // 400
 	}
 
 	err = w.service.DelUser(ctx, id)
@@ -138,11 +144,11 @@ func (w *webImpl) delUserHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, id)
 }
 
-//update
+// update
 func (w *webImpl) updateUserHandler(c *gin.Context) {
 	ctx := context.Background()
 	user := new(service.User)
-	respUser := new(service.User)
+	respUser := new(service.User) // не нужно
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Println(err)
@@ -150,7 +156,7 @@ func (w *webImpl) updateUserHandler(c *gin.Context) {
 	}
 	if err := c.BindJSON(&user); err != nil {
 		log.Println(err)
-		c.JSON(http.StatusInternalServerError, err.Error())
+		c.JSON(http.StatusInternalServerError, err.Error()) // 400
 		return
 	}
 	user.Id = id
@@ -163,7 +169,8 @@ func (w *webImpl) updateUserHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, respUser)
 }
 
-//декодеры JSON
+// не используется
+// декодеры JSON
 func (w *webImpl) Decoder(r *http.Request, user *service.User) error {
 
 	body, err := io.ReadAll(r.Body)

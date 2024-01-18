@@ -11,6 +11,7 @@ import (
 
 type ageImpl struct {
 	//ageClient service.AgeProvider
+	// сюда нужно передавать юрл при инциализации
 }
 
 func NewGetAge() *ageImpl {
@@ -35,7 +36,7 @@ func (s *ageImpl) GetAge(r *service.Query) (int, error) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("ioutil.ReadAll() -", err)
+		log.Println("ioutil.ReadAll() -", err) // ошибки плохо сделан, не надо код вставлять
 		return 0, err
 	}
 
