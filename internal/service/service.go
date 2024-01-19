@@ -4,18 +4,20 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/Antoha2/sandbox/config"
-	"github.com/Antoha2/sandbox/repository"
+	"github.com/Antoha2/sandbox/internal/config"
+	"github.com/Antoha2/sandbox/internal/repository"
 )
+
+const DefaultPropertyAge = 0
+const DefaultPropertyOffset = 0
+const DefaultPropertyLimit = 100
 
 type Repository interface {
 	GetUser(ctx context.Context, id int) error
 	GetUsers(ctx context.Context, filter *repository.RepQueryFilter) ([]*repository.RepUser, error)
 	AddUser(ctx context.Context, user *repository.RepUser) (int, error)
-	DelUser(ctx context.Context, id int) error
+	DelUser(ctx context.Context, id int) (*repository.RepUser, error)
 	UpdateUser(ctx context.Context, user *repository.RepUser) (*repository.RepUser, error)
-	//UserSaver(ctx context.Context, email string, passHash []byte) (uid int64, err error)
-	//UserProvider(ctx context.Context, email string) (models.User, error)
 }
 
 type Query struct {
@@ -24,13 +26,13 @@ type Query struct {
 }
 
 type AgeProvider interface {
-	GetAge(request *Query) (int, error)
+	GetAge(ctx context.Context, name string) (int, error)
 }
 type GenderProvider interface {
-	GetGender(request *Query) (string, error)
+	GetGender(ctx context.Context, name string) (string, error)
 }
 type NationalityProvider interface {
-	GetNationality(request *Query) (string, error)
+	GetNationality(ctx context.Context, name string) (string, error)
 }
 
 type servImpl struct {
@@ -45,12 +47,12 @@ type servImpl struct {
 func NewServ(
 	cfg *config.Config,
 	log *slog.Logger,
-	Rep *repository.Rep,
+	rep *repository.Rep,
 	ageClient AgeProvider,
 	genderClient GenderProvider,
 	nationalityClient NationalityProvider) *servImpl {
 	return &servImpl{
-		rep:               Rep,
+		rep:               rep,
 		log:               log,
 		cfg:               cfg,
 		ageClient:         ageClient,
@@ -69,7 +71,7 @@ type User struct {
 	Nationality string `json:"nationality"`
 }
 
-type GetQueryFilter struct {
+type QueryUsersFilter struct {
 	Id          int    `json:"id"`
 	Name        string `json:"name"`
 	SurName     string `json:"surname"`

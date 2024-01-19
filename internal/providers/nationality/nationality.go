@@ -1,19 +1,23 @@
 package provider
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
 
-	"github.com/Antoha2/sandbox/service"
+	"github.com/pkg/errors"
 )
 
 type natImpl struct {
+	addr string
 }
 
-func NewGetNat() *natImpl {
-	return &natImpl{}
+func NewGetNat(addr string) *natImpl {
+	return &natImpl{
+		addr: addr,
+	}
 }
 
 type Nat struct {
@@ -27,27 +31,25 @@ type natCountry struct {
 	Probability float32 `json:"probability"`
 }
 
-func (s *natImpl) GetNationality(r *service.Query) (string, error) {
+func (s *natImpl) GetNationality(ctx context.Context, name string) (string, error) {
 
-	resp, err := http.Get(r.Addr + r.Name)
+	restResponse := new(Nat)
+	query := fmt.Sprintf("%s?name=%s", s.addr, name)
+	resp, err := http.Get(query)
 	if err != nil {
-		log.Println("client.Do() - ", err)
-		return "", err
+		return "", errors.Wrap(err, "cant get resp Nationality ")
 	}
 
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("ioutil.ReadAll() -", err)
-		return "", err
+		return "", errors.Wrap(err, "cant read Nationality ")
 	}
 
-	restResponse := new(Nat)
 	err = json.Unmarshal(body, restResponse)
 	if err != nil {
-		log.Println("json.Unmarshal() -", err)
-		return "", err
+		return "", errors.Wrap(err, "cant Unmarshal Nationality ")
 	}
 
 	//выбор одного варианта с наибольшей вероятностью

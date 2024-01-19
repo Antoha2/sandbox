@@ -2,40 +2,36 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 //add user
-func (r *Rep) AddUser(ctx context.Context, user *RepUser) (int, error) {
+func (r *Rep) AddUser(ctx context.Context, user *RepUser) (*RepUser, error) {
 
-	query := "INSERT INTO users (name, surname, patronymic, age, gender, nationality) values ($1, $2, $3, $4, $5, $6) RETURNING id"
+	respUser := &RepUser{}
+	query := "INSERT INTO users (name, surname, patronymic, age, gender, nationality) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, surname, patronymic, age, gender, nationality"
 	row := r.DB.QueryRow(query, user.Name, user.SurName, user.Patronymic, user.Age, user.Gender, user.Nationality)
-	if err := row.Scan(&user.Id); err != nil {
-		return 0, err
+	if err := row.Scan(&respUser.Id, &respUser.Name, &respUser.SurName, &respUser.Patronymic, &respUser.Age, &respUser.Gender, &respUser.Nationality); err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("sql AddUser request failed %s", query))
 	}
-	log.Println("создана запись - ", user)
-	return user.Id, nil
+	return respUser, nil
 }
 
 //del user
-func (r *Rep) DelUser(ctx context.Context, id int) error {
-
-	query := "DELETE FROM users WHERE id = $1"
-	stmtDel, err := r.DB.Exec(query, id)
-	if err == nil {
-		count, err := stmtDel.RowsAffected()
-		if count == 0 || err != nil {
-			return errors.New("id not fined")
-		}
+func (r *Rep) DelUser(ctx context.Context, id int) (*RepUser, error) {
+	respUser := &RepUser{}
+	query := "DELETE FROM users WHERE id = $1 RETURNING id, name, surname, patronymic, age, gender, nationality"
+	row := r.DB.QueryRow(query, id)
+	if err := row.Scan(&respUser.Id, &respUser.Name, &respUser.SurName, &respUser.Patronymic, &respUser.Age, &respUser.Gender, &respUser.Nationality); err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("sql DelUser request failed %s", query))
 	}
-	log.Printf("удалена запись с id - %v\n", id)
-	return nil
+	return respUser, nil
 }
 
-//get users
+//get userS
 func (r *Rep) GetUsers(ctx context.Context, filter *RepQueryFilter) ([]*RepUser, error) {
 
 	users := make([]*RepUser, 0)
@@ -44,44 +40,40 @@ func (r *Rep) GetUsers(ctx context.Context, filter *RepQueryFilter) ([]*RepUser,
 	query := fmt.Sprintf("SELECT * FROM users%s", buildQuery)
 	stmtGet, err := r.DB.Query(query, args...)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, fmt.Sprintf("sql GetUsers query failed %s", query))
 	}
 
 	for stmtGet.Next() {
 		user := new(RepUser)
 		err := stmtGet.Scan(&user.Id, &user.Name, &user.SurName, &user.Patronymic, &user.Age, &user.Gender, &user.Nationality)
 		if err != nil {
-			panic(err)
+			return nil, errors.Wrap(err, "sql GetUsers scan failed users")
 		}
 		users = append(users, user)
-		fmt.Println("считана запись -", user)
 	}
 	return users, nil
 }
 
 //get user
-func (r *Rep) GetUser(ctx context.Context, id int) (RepUser, error) {
-	user := new(RepUser)
+func (r *Rep) GetUser(ctx context.Context, id int) (*RepUser, error) {
+	user := &RepUser{}
 	query := "SELECT * FROM users WHERE id = $1"
 	row := r.DB.QueryRow(query, id)
 	if err := row.Scan(&user.Id, &user.Name, &user.SurName, &user.Patronymic, &user.Age, &user.Gender, &user.Nationality); err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "sql GetUsers scan failed users")
 	}
-	log.Printf("получена запись с id - %v\n", id)
-	return *user, nil
+	return user, nil
 }
 
 //update user
 func (r *Rep) UpdateUser(ctx context.Context, user *RepUser) (*RepUser, error) {
-	query := "update users set name=$2, surname=$3, patronymic=$4, age=$5, gender=$6, nationality=$7 where id=$1"
-	stmtUp, err := r.DB.Exec(query, user.Id, user.Name, user.SurName, user.Patronymic, user.Age, user.Gender, user.Nationality)
-	if err == nil {
-		count, err := stmtUp.RowsAffected()
-		if count == 0 || err != nil {
-			return user, err
-		}
+	respUser := &RepUser{}
+	query := "UPDATE users SET name=$2, surname=$3, patronymic=$4, age=$5, gender=$6, nationality=$7 WHERE id=$1 RETURNING id, name, surname, patronymic, age, gender, nationality"
+
+	row := r.DB.QueryRow(query, user.Id, user.Name, user.SurName, user.Patronymic, user.Age, user.Gender, user.Nationality)
+	if err := row.Scan(&respUser.Id, &respUser.Name, &respUser.SurName, &respUser.Patronymic, &respUser.Age, &respUser.Gender, &respUser.Nationality); err != nil {
+		return nil, errors.Wrap(err, "sql UpdateUser scan failed users")
 	}
-	fmt.Println("изменена запись c id -", user.Id)
 	return user, nil
 }
 

@@ -1,7 +1,10 @@
 package config
 
 import (
+	"log"
+
 	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -29,6 +32,10 @@ type HTTPConfig struct {
 
 //загрузка конфига из .env
 func MustLoad() *Config {
+
+	if err := godotenv.Load(); err != nil {
+		log.Print("No .env file found")
+	}
 	var cfg Config
 	if err := cleanenv.ReadEnv(&cfg); err != nil {
 		panic("cannot read config: " + err.Error())

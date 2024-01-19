@@ -2,31 +2,24 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/Antoha2/sandbox/cmd/logger"
-	"github.com/Antoha2/sandbox/config"
-	providerAge "github.com/Antoha2/sandbox/providers/age"
-	providerGender "github.com/Antoha2/sandbox/providers/gender"
-	providerNat "github.com/Antoha2/sandbox/providers/nationality"
-	"github.com/Antoha2/sandbox/repository"
-	"github.com/Antoha2/sandbox/service"
+	"github.com/Antoha2/sandbox/internal/config"
+	providerAge "github.com/Antoha2/sandbox/internal/providers/age"
+	providerGender "github.com/Antoha2/sandbox/internal/providers/gender"
+	providerNat "github.com/Antoha2/sandbox/internal/providers/nationality"
+	"github.com/Antoha2/sandbox/internal/repository"
+	"github.com/Antoha2/sandbox/internal/service"
+	"github.com/Antoha2/sandbox/pkg/logger"
+	"github.com/Antoha2/sandbox/pkg/logger/sl"
 	transport "github.com/Antoha2/sandbox/transport/http"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
-	"github.com/joho/godotenv"
 )
-
-func init() {
-	// loads values from .env into the system
-	if err := godotenv.Load(); err != nil {
-		log.Print("No .env file found")
-	}
-}
 
 func main() {
 	Run()
@@ -36,17 +29,15 @@ func Run() {
 
 	cfg := config.MustLoad()
 	slog := logger.SetupLogger(cfg.Env)
-	dbx, err := initDb(cfg)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	dbx := MustInitDb(cfg)
 
 	rep := repository.NewRep(slog, dbx)
-	getAge := providerAge.NewGetAge()
-	getGender := providerGender.NewGetGender()
-	getNat := providerNat.NewGetNat()
-	serv := service.NewServ(cfg, slog, rep, getAge, getGender, getNat) //, getAge
+
+	pAge := providerAge.NewGetAge(cfg.AddrAge)
+	pGender := providerGender.NewGetGender(cfg.AddrGender)
+	pNat := providerNat.NewGetNat(cfg.AddrNationality)
+
+	serv := service.NewServ(cfg, slog, rep, pAge, pGender, pNat)
 	trans := transport.NewWeb(cfg, slog, serv)
 
 	go trans.StartHTTP()
@@ -59,7 +50,7 @@ func Run() {
 
 }
 
-func initDb(cfg *config.Config) (*sqlx.DB, error) {
+func MustInitDb(cfg *config.Config) *sqlx.DB {
 
 	connString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		cfg.DBConfig.User,
@@ -72,19 +63,22 @@ func initDb(cfg *config.Config) (*sqlx.DB, error) {
 
 	connConfig, err := pgx.ParseConfig(connString)
 	if err != nil {
-		return nil, fmt.Errorf("1 failed to parse config: %v", err)
+		slog.Warn("failed to parse config", sl.Err(err))
+		os.Exit(1)
 	}
 
 	// Make connections
 	dbx, err := sqlx.Open("pgx", stdlib.RegisterConnConfig(connConfig))
 	if err != nil {
-		return nil, fmt.Errorf("2 failed to create connection db: %v", err)
+		slog.Warn("failed to create connection db", sl.Err(err))
+		os.Exit(1)
 	}
 
 	err = dbx.Ping()
 	if err != nil {
-		return nil, fmt.Errorf("4 error to ping connection pool: %v", err)
+		slog.Warn("error to ping connection pool", sl.Err(err))
+		os.Exit(1)
 	}
-	log.Printf("Подключение к базе данных на http://127.0.0.1:%v\n", cfg.DBConfig.Port)
-	return dbx, nil
+	slog.Info("Подключение к базе данных на http://127.0.0.1:%v\n", cfg.DBConfig.Port)
+	return dbx
 }
