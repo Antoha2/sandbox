@@ -11,7 +11,7 @@ import (
 )
 
 type ageImpl struct {
-	addr string
+	addr string //url
 }
 
 func NewGetAge(addr string) *ageImpl {
@@ -20,15 +20,13 @@ func NewGetAge(addr string) *ageImpl {
 	}
 }
 
-type Age struct {
+type response struct {
 	Name  string `json:"name"`
 	Age   int    `json:"age"`
 	Count int    `json:"count"`
 }
 
 func (s *ageImpl) GetAge(ctx context.Context, name string) (int, error) {
-
-	restResponse := new(Age)
 	query := fmt.Sprintf("%s?name=%s", s.addr, name)
 	resp, err := http.Get(query)
 	if err != nil {
@@ -42,9 +40,11 @@ func (s *ageImpl) GetAge(ctx context.Context, name string) (int, error) {
 
 	defer resp.Body.Close()
 
-	err = json.Unmarshal(body, restResponse)
+	res := response{}
+	err = json.Unmarshal(body, &res)
 	if err != nil {
 		return 0, errors.Wrap(err, "cant unmarshal Age ")
 	}
-	return restResponse.Age, nil
+
+	return res.Age, nil
 }

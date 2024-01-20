@@ -7,14 +7,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// убрать теги для ямла, его нет в проекте
 type Config struct {
 	Env      string     `yaml:"env" env:"ENV" env-default:"local"`
 	HTTP     HTTPConfig `yaml:"http" `
 	DBConfig DBConfig   `yaml:"postgres"`
-	//MigrationsPath  string
-	AddrAge         string `yaml:"addrage" env:"ADDR_AGE"`
-	AddrGender      string `yaml:"addrgender" env:"ADDR_GENDER"`
-	AddrNationality string `yaml:"addrnationality" env:"ADDR_NATIONALITY"`
+	//MigrationsPath  string удалить
+	// во всех местах проекта, Addr переименоват в URL
+	AddrAge         string `yaml:"addrage" env:"ADDR_AGE"`                 // URLProviderAge/URL_PROVIDER_AGE
+	AddrGender      string `yaml:"addrgender" env:"ADDR_GENDER"`           // по примемеру выше
+	AddrNationality string `yaml:"addrnationality" env:"ADDR_NATIONALITY"` // по примеру
 }
 
 type DBConfig struct {
@@ -27,15 +29,15 @@ type DBConfig struct {
 }
 
 type HTTPConfig struct {
-	HostAddr string `yaml:"httpport" env:"HTTP_PORT" env-default:"8080"`
+	HostAddr string `yaml:"httpport" env:"HTTP_PORT" env-default:"8080"` // HostAddr переименовать в Port
 }
 
-//загрузка конфига из .env
+// загрузка конфига из .env
 func MustLoad() *Config {
-
 	if err := godotenv.Load(); err != nil {
 		log.Print("No .env file found")
 	}
+
 	var cfg Config
 	if err := cleanenv.ReadEnv(&cfg); err != nil {
 		panic("cannot read config: " + err.Error())

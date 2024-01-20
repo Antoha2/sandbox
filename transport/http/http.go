@@ -9,6 +9,7 @@ import (
 	"github.com/Antoha2/sandbox/internal/service"
 )
 
+// константы в отдельный фаил
 const ID = "id"
 const AGE = "age"
 const LIMIT = "limit"
@@ -29,7 +30,9 @@ type apiImpl struct {
 	server  *http.Server
 }
 
+// NewAPI
 func NewWeb(cfg *config.Config, log *slog.Logger, service Service) *apiImpl {
+
 	//HTTPport, err := strconv.Atoi(cfg.HTTP.HostAddr)
 	// if err != nil {
 	// 	fmt.Println(err)
@@ -42,8 +45,8 @@ func NewWeb(cfg *config.Config, log *slog.Logger, service Service) *apiImpl {
 	}
 }
 
+// перенеси ближе к функции старта
 func (a *apiImpl) Stop() {
-
 	if err := a.server.Shutdown(context.TODO()); err != nil {
 		panic(err) // failure/timeout shutting down the server gracefully
 	}

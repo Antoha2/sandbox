@@ -4,7 +4,6 @@ services:
   app:
     container_name: app
     image: golang:1.21.6
-  
     depends_on:
        - postgres
     environment:
@@ -23,13 +22,14 @@ services:
     container_name: postgres
     image: postgres:16.1-alpine3.19
     environment:
-     POSTGRES_DB: postgres
-     POSTGRES_USER:  user
-     POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+      POSTGRES_USER:  user
+      POSTGRES_PASSWORD: password
     ports:
       - '5432:5432'
     volumes:
-      - ./../db:/var/lib/postgresql
+      - ./db_data:/var/lib/postgresql
+    // Health Check  !!!!!
    
   migrate:
     image: migrate/migrate:v4.17.0
@@ -46,7 +46,7 @@ services:
       ]
     depends_on:
        - postgres
-
+// почитай что такое healthcheck и где и как правильно это делать
     healthcheck:
       test: pg_isready -U user -d postgres
       interval: 10s

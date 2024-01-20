@@ -20,6 +20,7 @@ type Repository interface {
 	UpdateUser(ctx context.Context, user *repository.RepUser) (*repository.RepUser, error)
 }
 
+// удалить если не используется
 type Query struct {
 	Name string
 	Addr string

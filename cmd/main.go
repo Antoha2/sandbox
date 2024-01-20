@@ -28,7 +28,7 @@ func main() {
 func Run() {
 
 	cfg := config.MustLoad()
-	slog := logger.SetupLogger(cfg.Env)
+	slog := logger.SetupLogger(cfg.Env) // slog переименовать? колизия имен со стандартным пакетом
 	dbx := MustInitDb(cfg)
 
 	rep := repository.NewRep(slog, dbx)

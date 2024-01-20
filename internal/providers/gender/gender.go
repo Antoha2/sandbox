@@ -28,7 +28,7 @@ type Gender struct {
 }
 
 func (s *genderImpl) GetGender(ctx context.Context, name string) (string, error) {
-
+	// по примеру из age
 	restResponse := new(Gender)
 	query := fmt.Sprintf("%s?name=%s", s.addr, name)
 	resp, err := http.Get(query)

@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//get userS
+// get userS
 func (s *servImpl) GetUsers(ctx context.Context, filter *QueryUsersFilter) ([]*User, error) {
 	readFilter := &repository.RepQueryFilter{
 		Id:          filter.Id,
@@ -22,7 +22,7 @@ func (s *servImpl) GetUsers(ctx context.Context, filter *QueryUsersFilter) ([]*U
 	}
 	repUsers, err := s.rep.GetUsers(ctx, readFilter)
 	if err != nil {
-		return nil, err
+		return nil, err // wrap
 	}
 
 	users := make([]*User, len(repUsers))
@@ -38,14 +38,15 @@ func (s *servImpl) GetUsers(ctx context.Context, filter *QueryUsersFilter) ([]*U
 		}
 		users[index] = t
 	}
+	// logs!!
 	return users, nil
 }
 
-//get user
+// get user
 func (s *servImpl) GetUser(ctx context.Context, id int) (*User, error) {
 	repUser, err := s.rep.GetUser(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, err // wrap
 	}
 	user := &User{
 		Id:          repUser.Id,
@@ -56,10 +57,11 @@ func (s *servImpl) GetUser(ctx context.Context, id int) (*User, error) {
 		Gender:      repUser.Gender,
 		Nationality: repUser.Nationality,
 	}
+	// logs!!
 	return user, nil
 }
 
-//del user
+// del user
 func (s *servImpl) DelUser(ctx context.Context, id int) (*User, error) {
 	repUser, err := s.rep.DelUser(ctx, id)
 	if err != nil {
@@ -74,55 +76,61 @@ func (s *servImpl) DelUser(ctx context.Context, id int) (*User, error) {
 		Gender:      repUser.Gender,
 		Nationality: repUser.Nationality,
 	}
+	// logs!!
 	return user, nil
 }
 
-//add user
+// add user
 func (s *servImpl) AddUser(ctx context.Context, user *User) (*User, error) {
 	var err error
-	reposUser := &repository.RepUser{
-		Name:       user.Name,
-		SurName:    user.SurName,
-		Patronymic: user.Patronymic,
-	}
 
-	reposUser.Age, err = s.ageClient.GetAge(ctx, user.Name)
+	age, err := s.ageClient.GetAge(ctx, user.Name)
 	if err != nil {
-
-		return nil, errors.Wrap(err, "occurate error for request provider get age")
+		return nil, errors.Wrap(err, "occurred error for request provider get age")
 	}
-	s.log.Debug("by username got age", reposUser.Name, reposUser.Age)
+	s.log.Debug("by username got age", user.Name, age)
 
-	reposUser.Gender, err = s.genderClient.GetGender(ctx, user.Name)
+	gender, err := s.genderClient.GetGender(ctx, user.Name)
 	if err != nil {
-		return nil, errors.Wrap(err, "occurate error for request provider get gender")
+		return nil, errors.Wrap(err, "occurred error for request provider get gender")
 	}
-	s.log.Debug("by username got gender", reposUser.Name, reposUser.Gender)
+	s.log.Debug("by username got gender", user.Name, gender)
 
-	reposUser.Nationality, err = s.nationalityClient.GetNationality(ctx, user.Name)
+	nationality, err := s.nationalityClient.GetNationality(ctx, user.Name)
 	if err != nil {
-		return nil, errors.Wrap(err, "occurate error for request provider get nationality")
+		return nil, errors.Wrap(err, "occurred error for request provider get nationality")
 	}
-	s.log.Debug("by username got nationality", reposUser.Name, reposUser.Nationality)
+	s.log.Debug("by username got nationality", user.Name, nationality)
 
-	reposUser, err = s.rep.AddUser(ctx, reposUser)
+	// плохая практика держать наполовину инициализированную структуру
+	repUser := &repository.RepUser{
+		Name:        user.Name,
+		SurName:     user.SurName,
+		Patronymic:  user.Patronymic,
+		Age:         age,
+		Gender:      gender,
+		Nationality: nationality,
+	}
+
+	repUser, err = s.rep.AddUser(ctx, repUser)
 	if err != nil {
 		return nil, err
 	}
 
 	respUser := &User{
-		Id:          reposUser.Id,
-		Name:        reposUser.Name,
-		SurName:     reposUser.SurName,
-		Patronymic:  reposUser.Patronymic,
-		Age:         reposUser.Age,
-		Gender:      reposUser.Gender,
-		Nationality: reposUser.Nationality,
+		Id:          repUser.Id,
+		Name:        repUser.Name,
+		SurName:     repUser.SurName,
+		Patronymic:  repUser.Patronymic,
+		Age:         repUser.Age,
+		Gender:      repUser.Gender,
+		Nationality: repUser.Nationality,
 	}
+
 	return respUser, nil
 }
 
-//update user
+// update user
 func (s *servImpl) UpdateUser(ctx context.Context, user *User) (*User, error) {
 	reposUser := &repository.RepUser{
 		Id:          user.Id,
@@ -133,6 +141,7 @@ func (s *servImpl) UpdateUser(ctx context.Context, user *User) (*User, error) {
 		Gender:      user.Gender,
 		Nationality: user.Nationality,
 	}
+
 	reposUser, err := s.rep.UpdateUser(ctx, reposUser)
 	if err != nil {
 		return nil, err

@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// что за nat?? пиши полностью как в остальных провайдерах
 type natImpl struct {
 	addr string
 }

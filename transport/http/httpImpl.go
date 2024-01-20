@@ -11,6 +11,7 @@ import (
 )
 
 func (a *apiImpl) StartHTTP() error {
+	// должна быть возможность запускать сервер на определенном порту, который мы получаем из конфига
 	router := gin.Default()
 	router.GET("/users/:id", a.getUserHandler)    //get user
 	router.GET("/users/", a.getUsersHandler)      //get userS
@@ -24,7 +25,7 @@ func (a *apiImpl) StartHTTP() error {
 	return nil
 }
 
-//get user
+// get user
 func (a *apiImpl) getUserHandler(c *gin.Context) {
 	const op = "getUser"
 
@@ -35,22 +36,23 @@ func (a *apiImpl) getUserHandler(c *gin.Context) {
 
 	id, err := strconv.Atoi(c.Param(ID))
 	if err != nil {
-
-		a.log.Debug("id not match type", sl.Err(err))
-		c.JSON(http.StatusBadRequest, err)
+		a.log.Error("id not match type", sl.Err(err))
+		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
+
 	user, err := a.service.GetUser(c, id)
 	if err != nil {
-		a.log.Debug("runtime error GetUser", sl.Err(err))
+		a.log.Error("occurred error for GetUser", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	log.Info("request getUser completed successfully")
+
+	log.Info("request getUser completed successfully") // добавь в  логирование юзера которого возвращаем в запросе
 	c.JSON(http.StatusOK, user)
 }
 
-//get users
+// get users
 func (a *apiImpl) getUsersHandler(c *gin.Context) {
 
 	const op = "getUsers"
@@ -71,34 +73,34 @@ func (a *apiImpl) getUsersHandler(c *gin.Context) {
 	if qAge != "" {
 		age, err = strconv.Atoi(qAge)
 		if err != nil {
-			a.log.Debug("Age not match type", sl.Err(err))
-			c.JSON(http.StatusBadRequest, sl.Err(err))
-			return
-
-		}
-	}
-
-	rOffset := q.Get(OFFSET)
-	if rOffset != "" {
-		offset, err = strconv.Atoi(rOffset)
-		if err != nil {
-			a.log.Debug("offset not match type", sl.Err(err))
+			a.log.Error("Age not match type", sl.Err(err))
 			c.JSON(http.StatusBadRequest, sl.Err(err))
 			return
 		}
 	}
 
-	rLimit := q.Get(LIMIT)
-	if rLimit != "" {
-		limit, err = strconv.Atoi(rLimit)
+	qOffset := q.Get(OFFSET)
+	if qOffset != "" {
+		offset, err = strconv.Atoi(qOffset)
 		if err != nil {
-			a.log.Debug("limit not match type", sl.Err(err))
+			a.log.Error("offset not match type", sl.Err(err))
+			c.JSON(http.StatusBadRequest, sl.Err(err))
+			return
+		}
+	}
+
+	qLimit := q.Get(LIMIT)
+	if qLimit != "" {
+		limit, err = strconv.Atoi(qLimit)
+		if err != nil {
+			a.log.Error("limit not match type", sl.Err(err))
 			c.JSON(http.StatusBadRequest, sl.Err(err))
 			return
 		}
 	}
 
 	userQuery := &service.QueryUsersFilter{
+		// все строки в константы
 		Name:        q.Get("name"),
 		SurName:     q.Get("surname"),
 		Patronymic:  q.Get("patronymic"),
@@ -108,19 +110,20 @@ func (a *apiImpl) getUsersHandler(c *gin.Context) {
 		Offset:      offset,
 		Limit:       limit,
 	}
+
 	users, err := a.service.GetUsers(c, userQuery)
 	if err != nil {
-		a.log.Debug("runtime error GetUsers", sl.Err(err))
+		a.log.Error("runtime error GetUsers", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	log.Info("request getUsers completed successfully")
+
+	log.Info("request getUsers completed successfully") // add more info
 	c.JSON(http.StatusOK, users)
 }
 
-//add
+// add
 func (a *apiImpl) addUserHandler(c *gin.Context) {
-
 	const op = "addUsers"
 
 	log := a.log.With(
@@ -128,23 +131,25 @@ func (a *apiImpl) addUserHandler(c *gin.Context) {
 	)
 	log.Info("attempting to add user")
 
-	user := &service.User{}
+	user := service.User{}
 	if err := c.BindJSON(&user); err != nil {
-		log.Debug("cant unmarshall", sl.Err(err))
-		c.JSON(http.StatusInternalServerError, err.Error())
+		log.Error("cant unmarshall", sl.Err(err))
+		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
-	respUser, err := a.service.AddUser(c, user)
+
+	respUser, err := a.service.AddUser(c, &user)
 	if err != nil {
-		a.log.Debug("runtime error", sl.Err(err))
+		a.log.Error("runtime error", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	log.Info("request completed successfully")
+
+	log.Info("request completed successfully") // info
 	c.JSON(http.StatusCreated, respUser)
 }
 
-//del
+// del
 func (a *apiImpl) delUserHandler(c *gin.Context) {
 	const op = "delUsers"
 
@@ -165,37 +170,41 @@ func (a *apiImpl) delUserHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
+
 	log.Info("request delUser completed successfully")
 	c.JSON(http.StatusOK, user)
 }
 
-//update
+// update
 func (a *apiImpl) updateUserHandler(c *gin.Context) {
 	const op = "updateUsers"
 
 	log := a.log.With(
 		slog.String("op", op),
 	)
-	user := &service.User{}
-	respUser := &service.User{}
-	id, err := strconv.Atoi(c.Param("id"))
+
+	user := service.User{}
+	id, err := strconv.Atoi(c.Param(ID))
 	if err != nil {
 		a.log.Debug("id not match type", sl.Err(err))
 		c.JSON(http.StatusBadRequest, sl.Err(err))
 		return
 	}
+
 	if err := c.BindJSON(&user); err != nil {
 		a.log.Debug("cant unmarshall updateUser", sl.Err(err))
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
+
 	user.Id = id
-	respUser, err = a.service.UpdateUser(c, user)
+	respUser, err := a.service.UpdateUser(c, &user)
 	if err != nil {
 		a.log.Debug("runtime error updateUser", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
+
 	log.Info("request updateUser completed successfully")
 	c.JSON(http.StatusCreated, respUser)
 }
