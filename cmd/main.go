@@ -79,6 +79,6 @@ func MustInitDb(cfg *config.Config) *sqlx.DB {
 		slog.Warn("error to ping connection pool", sl.Err(err))
 		os.Exit(1)
 	}
-	slog.Info("Подключение к базе данных на http://127.0.0.1:%v\n", cfg.DBConfig.Port)
+	slog.Info(fmt.Sprintf("Подключение к базе данных на http://127.0.0.1:%v\n", cfg.DBConfig.Port))
 	return dbx
 }

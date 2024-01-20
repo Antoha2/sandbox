@@ -1,10 +1,9 @@
 version: '3'
 services:
-
  
-  auth:
-    container_name: test
-    image: golang:1.21.4
+  app:
+    container_name: app
+    image: golang:1.21.6
   
     depends_on:
        - postgres
@@ -14,24 +13,44 @@ services:
       - ./:/app/
     working_dir: /app
     expose:
-      - 8180
+      - 8080
     ports:
-      - '8180:8180'
+      - '8080:8080'
     command: >
-     bash -c "go get 
-     && go run ./cmd/main.go"
-    # --config=./config/config_local.yaml"
-
+      bash -c "go run ./cmd/main.go"
+     
   postgres:
     container_name: postgres
-    image: postgres:latest
-
+    image: postgres:16.1-alpine3.19
     environment:
-     POSTGRES_DB: test
+     POSTGRES_DB: postgres
      POSTGRES_USER:  user
-     POSTGRES_PASSWORD: user
+     POSTGRES_PASSWORD: password
     ports:
       - '5432:5432'
     volumes:
       - ./../db:/var/lib/postgresql
+   
+  migrate:
+    image: migrate/migrate:v4.17.0
+    volumes:
+      - ./migrations:/migrations
+    entrypoint:
+      [
+        "migrate",
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://user:password@postgres:5432/postgres?sslmode=disable",
+        "up"
+      ]
+    depends_on:
+       - postgres
 
+    healthcheck:
+      test: pg_isready -U user -d postgres
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 10s
+    
