@@ -11,24 +11,24 @@ import (
 //add user
 func (r *Rep) AddUser(ctx context.Context, user *RepUser) (*RepUser, error) {
 
-	respUser := &RepUser{}
+	respUser := RepUser{}
 	query := "INSERT INTO users (name, surname, patronymic, age, gender, nationality) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, surname, patronymic, age, gender, nationality"
 	row := r.DB.QueryRow(query, user.Name, user.SurName, user.Patronymic, user.Age, user.Gender, user.Nationality)
 	if err := row.Scan(&respUser.Id, &respUser.Name, &respUser.SurName, &respUser.Patronymic, &respUser.Age, &respUser.Gender, &respUser.Nationality); err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("sql AddUser request failed %s", query))
 	}
-	return respUser, nil
+	return &respUser, nil
 }
 
-//del user
-func (r *Rep) DelUser(ctx context.Context, id int) (*RepUser, error) {
-	respUser := &RepUser{}
+//delete user
+func (r *Rep) DeleteUser(ctx context.Context, id int) (*RepUser, error) {
+	respUser := RepUser{}
 	query := "DELETE FROM users WHERE id = $1 RETURNING id, name, surname, patronymic, age, gender, nationality"
 	row := r.DB.QueryRow(query, id)
 	if err := row.Scan(&respUser.Id, &respUser.Name, &respUser.SurName, &respUser.Patronymic, &respUser.Age, &respUser.Gender, &respUser.Nationality); err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("sql DelUser request failed %s", query))
 	}
-	return respUser, nil
+	return &respUser, nil
 }
 
 //get userS
@@ -37,7 +37,7 @@ func (r *Rep) GetUsers(ctx context.Context, filter *RepQueryFilter) ([]*RepUser,
 	users := make([]*RepUser, 0)
 	buildQuery, args := buildQueryConstrain(filter)
 
-	query := fmt.Sprintf("SELECT * FROM users%s", buildQuery)
+	query := fmt.Sprintf("SELECT id, name, surname, patronymic, age, gender, nationality FROM users%s", buildQuery)
 	stmtGet, err := r.DB.Query(query, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("sql GetUsers query failed %s", query))
@@ -56,25 +56,25 @@ func (r *Rep) GetUsers(ctx context.Context, filter *RepQueryFilter) ([]*RepUser,
 
 //get user
 func (r *Rep) GetUser(ctx context.Context, id int) (*RepUser, error) {
-	user := &RepUser{}
-	query := "SELECT * FROM users WHERE id = $1"
+	user := RepUser{}
+	query := "SELECT id, name, surname, patronymic, age, gender, nationality FROM users WHERE id = $1"
 	row := r.DB.QueryRow(query, id)
 	if err := row.Scan(&user.Id, &user.Name, &user.SurName, &user.Patronymic, &user.Age, &user.Gender, &user.Nationality); err != nil {
 		return nil, errors.Wrap(err, "sql GetUsers scan failed users")
 	}
-	return user, nil
+	return &user, nil
 }
 
 //update user
 func (r *Rep) UpdateUser(ctx context.Context, user *RepUser) (*RepUser, error) {
-	respUser := &RepUser{}
-	query := "UPDATE users SET name=$2, surname=$3, patronymic=$4, age=$5, gender=$6, nationality=$7 WHERE id=$1 RETURNING id, name, surname, patronymic, age, gender, nationality"
+	respUser := RepUser{}
+	query := "UPDATE users SET name=$1, surname=$2, patronymic=$3, age=$4, gender=$5, nationality=$6 WHERE id=$7 RETURNING id, name, surname, patronymic, age, gender, nationality"
 
-	row := r.DB.QueryRow(query, user.Id, user.Name, user.SurName, user.Patronymic, user.Age, user.Gender, user.Nationality)
+	row := r.DB.QueryRow(query, user.Name, user.SurName, user.Patronymic, user.Age, user.Gender, user.Nationality, user.Id)
 	if err := row.Scan(&respUser.Id, &respUser.Name, &respUser.SurName, &respUser.Patronymic, &respUser.Age, &respUser.Gender, &respUser.Nationality); err != nil {
 		return nil, errors.Wrap(err, "sql UpdateUser scan failed users")
 	}
-	return user, nil
+	return &respUser, nil
 }
 
 //build query string
@@ -118,9 +118,8 @@ func buildQueryConstrain(filter *RepQueryFilter) (string, []any) {
 		args = append(args, filter.Nationality)
 		i++
 	}
-	query := strings.Join(constrain, " AND ")
-	if query != "" {
-		query = fmt.Sprintf(" WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d", query, filter.Limit, filter.Offset)
-	}
+
+	query := fmt.Sprintf(" WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d", strings.Join(constrain, " AND "), filter.Limit, filter.Offset)
+
 	return query, args
 }

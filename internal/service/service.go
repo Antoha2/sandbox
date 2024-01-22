@@ -16,13 +16,8 @@ type Repository interface {
 	GetUser(ctx context.Context, id int) error
 	GetUsers(ctx context.Context, filter *repository.RepQueryFilter) ([]*repository.RepUser, error)
 	AddUser(ctx context.Context, user *repository.RepUser) (int, error)
-	DelUser(ctx context.Context, id int) (*repository.RepUser, error)
+	DeleteUser(ctx context.Context, id int) (*repository.RepUser, error)
 	UpdateUser(ctx context.Context, user *repository.RepUser) (*repository.RepUser, error)
-}
-
-type Query struct {
-	Name string
-	Addr string
 }
 
 type AgeProvider interface {

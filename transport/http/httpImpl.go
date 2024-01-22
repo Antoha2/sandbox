@@ -1,6 +1,8 @@
 package transport
 
 import (
+	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -8,6 +10,7 @@ import (
 	"github.com/Antoha2/sandbox/internal/service"
 	"github.com/Antoha2/sandbox/pkg/logger/sl"
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 )
 
 func (a *apiImpl) StartHTTP() error {
@@ -17,21 +20,26 @@ func (a *apiImpl) StartHTTP() error {
 	router.POST("/users/", a.addUserHandler)      //add user
 	router.DELETE("/users/:id", a.delUserHandler) //del user
 	router.PUT("/users/:id", a.updateUserHandler) //update user
-	err := router.Run()
+
+	err := router.Run(fmt.Sprintf(":%s", a.cfg.HTTP.HostPort))
 	if err != nil {
-		return err
+		a.log.Debug("ocurred error StartHTTP", sl.Err(err))
+		return errors.Wrap(err, "ocurred error StartHTTP")
 	}
 	return nil
 }
 
+func (a *apiImpl) Stop() {
+	if err := a.server.Shutdown(context.TODO()); err != nil {
+		panic(errors.Wrap(err, "ocurred error Stop"))
+	}
+}
+
 //get user
 func (a *apiImpl) getUserHandler(c *gin.Context) {
-	const op = "getUser"
 
-	log := a.log.With(
-		slog.String("op", op),
-	)
-	log.Info("attempting to get user")
+	const op = "getUser"
+	log := a.log.With(slog.String("op", op))
 
 	id, err := strconv.Atoi(c.Param(ID))
 	if err != nil {
@@ -40,25 +48,25 @@ func (a *apiImpl) getUserHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, err)
 		return
 	}
+
+	log.Info("run get User by ID", sl.Atr("id", id))
+
 	user, err := a.service.GetUser(c, id)
 	if err != nil {
-		a.log.Debug("runtime error GetUser", sl.Err(err))
+		a.log.Debug("ocurred error Get User", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	log.Info("request getUser completed successfully")
+
+	log.Info("get User successfully", sl.Atr("respUser", user))
+
 	c.JSON(http.StatusOK, user)
 }
 
 //get users
 func (a *apiImpl) getUsersHandler(c *gin.Context) {
-
 	const op = "getUsers"
-
-	log := a.log.With(
-		slog.String("op", op),
-	)
-	log.Info("attempting to get users")
+	log := a.log.With(slog.String("op", op))
 
 	var err error
 	age := service.DefaultPropertyAge
@@ -74,7 +82,6 @@ func (a *apiImpl) getUsersHandler(c *gin.Context) {
 			a.log.Debug("Age not match type", sl.Err(err))
 			c.JSON(http.StatusBadRequest, sl.Err(err))
 			return
-
 		}
 	}
 
@@ -97,7 +104,6 @@ func (a *apiImpl) getUsersHandler(c *gin.Context) {
 			return
 		}
 	}
-
 	userQuery := &service.QueryUsersFilter{
 		Name:        q.Get("name"),
 		SurName:     q.Get("surname"),
@@ -108,13 +114,18 @@ func (a *apiImpl) getUsersHandler(c *gin.Context) {
 		Offset:      offset,
 		Limit:       limit,
 	}
+
+	log.Info("run get Users", sl.Atr("filter", userQuery))
+
 	users, err := a.service.GetUsers(c, userQuery)
 	if err != nil {
-		a.log.Debug("runtime error GetUsers", sl.Err(err))
+		a.log.Debug("ocurred error Get Users", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	log.Info("request getUsers completed successfully")
+
+	log.Info("get Users successfully", sl.Atr("respUsers", users))
+
 	c.JSON(http.StatusOK, users)
 }
 
@@ -122,36 +133,35 @@ func (a *apiImpl) getUsersHandler(c *gin.Context) {
 func (a *apiImpl) addUserHandler(c *gin.Context) {
 
 	const op = "addUsers"
-
-	log := a.log.With(
-		slog.String("op", op),
-	)
-	log.Info("attempting to add user")
+	log := a.log.With(slog.String("op", op))
 
 	user := &service.User{}
 	if err := c.BindJSON(&user); err != nil {
-		log.Debug("cant unmarshall", sl.Err(err))
+		log.Error("cant unmarshall", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	log.Info("run add User", sl.Atr("User", user))
+
 	respUser, err := a.service.AddUser(c, user)
 	if err != nil {
-		a.log.Debug("runtime error", sl.Err(err))
+		a.log.Error("ocurred error for run add User", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	log.Info("request completed successfully")
+
+	log.Info("add User successfully", sl.Atr("respUser", respUser))
+
 	c.JSON(http.StatusCreated, respUser)
 }
 
 //del
 func (a *apiImpl) delUserHandler(c *gin.Context) {
-	const op = "delUsers"
 
-	log := a.log.With(
-		slog.String("op", op),
-	)
-	log.Info("attempting to del user")
+	const op = "delUsers"
+	log := a.log.With(slog.String("op", op))
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		a.log.Debug("id not match type", sl.Err(err))
@@ -159,25 +169,28 @@ func (a *apiImpl) delUserHandler(c *gin.Context) {
 		return
 	}
 
-	user, err := a.service.DelUser(c, id)
+	log.Info("run del User by ID", sl.Atr("id", id))
+
+	user, err := a.service.DeleteUser(c, id)
 	if err != nil {
-		a.log.Debug("runtime error delUser", sl.Err(err))
+		a.log.Debug("ocurred error del User", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	log.Info("request delUser completed successfully")
+
+	log.Info("del User successfully", sl.Atr("respUser", user))
+
 	c.JSON(http.StatusOK, user)
 }
 
 //update
 func (a *apiImpl) updateUserHandler(c *gin.Context) {
 	const op = "updateUsers"
+	log := a.log.With(slog.String("op", op))
 
-	log := a.log.With(
-		slog.String("op", op),
-	)
 	user := &service.User{}
 	respUser := &service.User{}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		a.log.Debug("id not match type", sl.Err(err))
@@ -185,17 +198,23 @@ func (a *apiImpl) updateUserHandler(c *gin.Context) {
 		return
 	}
 	if err := c.BindJSON(&user); err != nil {
-		a.log.Debug("cant unmarshall updateUser", sl.Err(err))
+		a.log.Debug("cant unmarshall update User", sl.Err(err))
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
+
 	user.Id = id
+
+	log.Info("run update user", sl.Atr("User", user))
+
 	respUser, err = a.service.UpdateUser(c, user)
 	if err != nil {
-		a.log.Debug("runtime error updateUser", sl.Err(err))
+		a.log.Debug("ocurred error update User", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	log.Info("request updateUser completed successfully")
+
+	log.Info("update User successfully", sl.Atr("respUser", respUser))
+
 	c.JSON(http.StatusCreated, respUser)
 }

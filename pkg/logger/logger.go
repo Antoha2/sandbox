@@ -12,20 +12,13 @@ const (
 )
 
 func SetupLogger(env string) *slog.Logger {
-	var log *slog.Logger
+	var level slog.Leveler
 	switch env {
-	case envLocal:
-		log = slog.New(
-			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
-		)
-	case envDev:
-		log = slog.New(
-			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
-		)
+	case envLocal, envDev:
+		level = slog.LevelDebug
+
 	case envProd:
-		log = slog.New(
-			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
-		)
+		level = slog.LevelInfo
 	}
-	return log
+	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 }

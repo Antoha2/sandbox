@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Antoha2/sandbox/internal/repository"
+	"github.com/Antoha2/sandbox/pkg/logger/sl"
 	"github.com/pkg/errors"
 )
 
@@ -22,7 +23,7 @@ func (s *servImpl) GetUsers(ctx context.Context, filter *QueryUsersFilter) ([]*U
 	}
 	repUsers, err := s.rep.GetUsers(ctx, readFilter)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "runtime error GetUsers")
 	}
 
 	users := make([]*User, len(repUsers))
@@ -45,7 +46,7 @@ func (s *servImpl) GetUsers(ctx context.Context, filter *QueryUsersFilter) ([]*U
 func (s *servImpl) GetUser(ctx context.Context, id int) (*User, error) {
 	repUser, err := s.rep.GetUser(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "runtime error GetUser")
 	}
 	user := &User{
 		Id:          repUser.Id,
@@ -60,10 +61,10 @@ func (s *servImpl) GetUser(ctx context.Context, id int) (*User, error) {
 }
 
 //del user
-func (s *servImpl) DelUser(ctx context.Context, id int) (*User, error) {
-	repUser, err := s.rep.DelUser(ctx, id)
+func (s *servImpl) DeleteUser(ctx context.Context, id int) (*User, error) {
+	repUser, err := s.rep.DeleteUser(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "runtime error DeleteUser")
 	}
 	user := &User{
 		Id:          repUser.Id,
@@ -79,45 +80,52 @@ func (s *servImpl) DelUser(ctx context.Context, id int) (*User, error) {
 
 //add user
 func (s *servImpl) AddUser(ctx context.Context, user *User) (*User, error) {
-	var err error
-	reposUser := &repository.RepUser{
-		Name:       user.Name,
-		SurName:    user.SurName,
-		Patronymic: user.Patronymic,
-	}
 
-	reposUser.Age, err = s.ageClient.GetAge(ctx, user.Name)
+	reposUser := &repository.RepUser{}
+
+	age, err := s.ageClient.GetAge(ctx, user.Name)
 	if err != nil {
-
+		//s.log.Debug("by username didn't age", user.Name, user.Age)
 		return nil, errors.Wrap(err, "occurate error for request provider get age")
 	}
-	s.log.Debug("by username got age", reposUser.Name, reposUser.Age)
+	s.log.Debug("by username got age", sl.Atr("age", age), sl.Atr("name", user.Name))
 
-	reposUser.Gender, err = s.genderClient.GetGender(ctx, user.Name)
+	gender, err := s.genderClient.GetGender(ctx, user.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "occurate error for request provider get gender")
 	}
-	s.log.Debug("by username got gender", reposUser.Name, reposUser.Gender)
+	s.log.Debug("by username got gender", sl.Atr("gender", gender), sl.Atr("name", user.Name))
 
-	reposUser.Nationality, err = s.nationalityClient.GetNationality(ctx, user.Name)
+	nationality, err := s.nationalityClient.GetNationality(ctx, user.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "occurate error for request provider get nationality")
 	}
-	s.log.Debug("by username got nationality", reposUser.Name, reposUser.Nationality)
+	//s.log.Debug(fmt.Sprintf("by username %s got nationality %s", user.Name, user.Nationality))
 
-	reposUser, err = s.rep.AddUser(ctx, reposUser)
+	s.log.Debug("by username got nationality", sl.Atr("nationality", nationality), sl.Atr("name", user.Name))
+
+	repUser := &repository.RepUser{
+		Name:        user.Name,
+		SurName:     user.SurName,
+		Patronymic:  user.Patronymic,
+		Age:         age,
+		Gender:      gender,
+		Nationality: nationality,
+	}
+
+	repUser, err = s.rep.AddUser(ctx, repUser)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "runtime error AddUser")
 	}
 
 	respUser := &User{
-		Id:          reposUser.Id,
-		Name:        reposUser.Name,
-		SurName:     reposUser.SurName,
+		Id:          repUser.Id,
+		Name:        repUser.Name,
+		SurName:     repUser.SurName,
 		Patronymic:  reposUser.Patronymic,
-		Age:         reposUser.Age,
-		Gender:      reposUser.Gender,
-		Nationality: reposUser.Nationality,
+		Age:         repUser.Age,
+		Gender:      repUser.Gender,
+		Nationality: repUser.Nationality,
 	}
 	return respUser, nil
 }
@@ -135,7 +143,7 @@ func (s *servImpl) UpdateUser(ctx context.Context, user *User) (*User, error) {
 	}
 	reposUser, err := s.rep.UpdateUser(ctx, reposUser)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "runtime error UpdateUser")
 	}
 	respUser := &User{
 		Id:          reposUser.Id,

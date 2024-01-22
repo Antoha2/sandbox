@@ -11,30 +11,30 @@ import (
 )
 
 type natImpl struct {
-	addr string
+	URL string
 }
 
-func NewGetNat(addr string) *natImpl {
+func NewGetNat(URL string) *natImpl {
 	return &natImpl{
-		addr: addr,
+		URL: URL,
 	}
 }
 
-type Nat struct {
-	Name    string       `json:"name"`
-	Count   int          `json:"count"`
-	Country []natCountry `json:"country"`
+type response struct {
+	Name    string               `json:"name"`
+	Count   int                  `json:"count"`
+	Country []NationalityCountry `json:"country"`
 }
 
-type natCountry struct {
+type NationalityCountry struct {
 	CountryId   string  `json:"country_id"`
 	Probability float32 `json:"probability"`
 }
 
 func (s *natImpl) GetNationality(ctx context.Context, name string) (string, error) {
 
-	restResponse := new(Nat)
-	query := fmt.Sprintf("%s?name=%s", s.addr, name)
+	restResponse := new(response)
+	query := fmt.Sprintf("%s?name=%s", s.URL, name)
 	resp, err := http.Get(query)
 	if err != nil {
 		return "", errors.Wrap(err, "cant get resp Nationality ")
@@ -52,7 +52,7 @@ func (s *natImpl) GetNationality(ctx context.Context, name string) (string, erro
 		return "", errors.Wrap(err, "cant Unmarshal Nationality ")
 	}
 
-	//выбор одного варианта с наибольшей вероятностью
+	//choosing one option with the highest probability
 	var probability float32
 	var country string
 	for _, v := range restResponse.Country {

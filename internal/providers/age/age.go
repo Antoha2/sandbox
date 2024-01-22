@@ -11,16 +11,16 @@ import (
 )
 
 type ageImpl struct {
-	addr string
+	URL string
 }
 
-func NewGetAge(addr string) *ageImpl {
+func NewGetAge(URL string) *ageImpl {
 	return &ageImpl{
-		addr: addr,
+		URL: URL,
 	}
 }
 
-type Age struct {
+type response struct {
 	Name  string `json:"name"`
 	Age   int    `json:"age"`
 	Count int    `json:"count"`
@@ -28,8 +28,8 @@ type Age struct {
 
 func (s *ageImpl) GetAge(ctx context.Context, name string) (int, error) {
 
-	restResponse := new(Age)
-	query := fmt.Sprintf("%s?name=%s", s.addr, name)
+	restResponse := new(response)
+	query := fmt.Sprintf("%s?name=%s", s.URL, name)
 	resp, err := http.Get(query)
 	if err != nil {
 		return 0, errors.Wrap(err, "cant get resp Age ")

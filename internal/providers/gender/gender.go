@@ -11,16 +11,16 @@ import (
 )
 
 type genderImpl struct {
-	addr string
+	URL string
 }
 
-func NewGetGender(addr string) *genderImpl {
+func NewGetGender(URL string) *genderImpl {
 	return &genderImpl{
-		addr: addr,
+		URL: URL,
 	}
 }
 
-type Gender struct {
+type response struct {
 	Name        string  `json:"name"`
 	Gender      string  `json:"gender"`
 	Count       int     `json:"count"`
@@ -29,8 +29,8 @@ type Gender struct {
 
 func (s *genderImpl) GetGender(ctx context.Context, name string) (string, error) {
 
-	restResponse := new(Gender)
-	query := fmt.Sprintf("%s?name=%s", s.addr, name)
+	restResponse := new(response)
+	query := fmt.Sprintf("%s?name=%s", s.URL, name)
 	resp, err := http.Get(query)
 	if err != nil {
 		return "", errors.Wrap(err, "cant get resp Gender ")

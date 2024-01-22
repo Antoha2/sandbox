@@ -28,17 +28,17 @@ func main() {
 func Run() {
 
 	cfg := config.MustLoad()
-	slog := logger.SetupLogger(cfg.Env)
+	slogger := logger.SetupLogger(cfg.Env)
 	dbx := MustInitDb(cfg)
 
-	rep := repository.NewRep(slog, dbx)
+	rep := repository.NewRep(slogger, dbx)
 
-	pAge := providerAge.NewGetAge(cfg.AddrAge)
-	pGender := providerGender.NewGetGender(cfg.AddrGender)
-	pNat := providerNat.NewGetNat(cfg.AddrNationality)
+	pAge := providerAge.NewGetAge(cfg.URLAge)
+	pGender := providerGender.NewGetGender(cfg.URLGender)
+	pNat := providerNat.NewGetNat(cfg.URLNationality)
 
-	serv := service.NewServ(cfg, slog, rep, pAge, pGender, pNat)
-	trans := transport.NewWeb(cfg, slog, serv)
+	serv := service.NewServ(cfg, slogger, rep, pAge, pGender, pNat)
+	trans := transport.NewApi(cfg, slogger, serv)
 
 	go trans.StartHTTP()
 
