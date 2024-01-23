@@ -23,7 +23,7 @@ func (s *servImpl) GetUsers(ctx context.Context, filter *QueryUsersFilter) ([]*U
 	}
 	repUsers, err := s.rep.GetUsers(ctx, readFilter)
 	if err != nil {
-		return nil, errors.Wrap(err, "runtime error GetUsers")
+		return nil, errors.Wrap(err, "occurred error GetUsers")
 	}
 
 	users := make([]*User, len(repUsers))
@@ -46,7 +46,7 @@ func (s *servImpl) GetUsers(ctx context.Context, filter *QueryUsersFilter) ([]*U
 func (s *servImpl) GetUser(ctx context.Context, id int) (*User, error) {
 	repUser, err := s.rep.GetUser(ctx, id)
 	if err != nil {
-		return nil, errors.Wrap(err, "runtime error GetUser")
+		return nil, errors.Wrap(err, "occurred error GetUser")
 	}
 	user := &User{
 		Id:          repUser.Id,
@@ -64,7 +64,7 @@ func (s *servImpl) GetUser(ctx context.Context, id int) (*User, error) {
 func (s *servImpl) DeleteUser(ctx context.Context, id int) (*User, error) {
 	repUser, err := s.rep.DeleteUser(ctx, id)
 	if err != nil {
-		return nil, errors.Wrap(err, "runtime error DeleteUser")
+		return nil, errors.Wrap(err, "occurred error DeleteUser")
 	}
 	user := &User{
 		Id:          repUser.Id,
@@ -110,7 +110,7 @@ func (s *servImpl) AddUser(ctx context.Context, user *User) (*User, error) {
 
 	repUser, err = s.rep.AddUser(ctx, repUser)
 	if err != nil {
-		return nil, errors.Wrap(err, "runtime error AddUser")
+		return nil, errors.Wrap(err, "occurred error AddUser")
 	}
 
 	respUser := &User{
@@ -138,7 +138,7 @@ func (s *servImpl) UpdateUser(ctx context.Context, user *User) (*User, error) {
 	}
 	reposUser, err := s.rep.UpdateUser(ctx, reposUser)
 	if err != nil {
-		return nil, errors.Wrap(err, "runtime error UpdateUser")
+		return nil, errors.Wrap(err, "occurred error UpdateUser")
 	}
 	respUser := &User{
 		Id:          reposUser.Id,

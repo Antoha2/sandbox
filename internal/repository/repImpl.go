@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -41,6 +42,7 @@ func (r *Rep) GetUsers(ctx context.Context, filter *RepQueryFilter) ([]*RepUser,
 	queryConstrain, args := buildQueryConstrain(filter)
 
 	query := fmt.Sprintf("SELECT id, name, surname, patronymic, age, gender, nationality FROM users%s LIMIT %d OFFSET %d", queryConstrain, filter.Limit, filter.Offset)
+
 	rows, err := r.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("sql select Users failed, query: %s", query))
@@ -86,6 +88,8 @@ func (r *Rep) UpdateUser(ctx context.Context, user *RepUser) (*RepUser, error) {
 
 //build query string
 func buildQueryConstrain(filter *RepQueryFilter) (string, []any) {
+	log.Println("2!!!!!!!!!!!!!!!!!!!!!!!! ", filter)
+
 	i := 1
 	constrains := make([]string, 0, 6)
 	args := make([]any, 0, 6)
@@ -118,6 +122,7 @@ func buildQueryConstrain(filter *RepQueryFilter) (string, []any) {
 		args = append(args, filter.Age)
 	}
 	if filter.Gender != "" {
+
 		s := fmt.Sprintf("gender=$%d", i)
 		i++
 
@@ -134,7 +139,8 @@ func buildQueryConstrain(filter *RepQueryFilter) (string, []any) {
 
 	queryConstrain := strings.Join(constrains, " AND ")
 	if queryConstrain != "" {
-		queryConstrain = fmt.Sprintf(" WHERE %s ORDER BY id ASC", constrains)
+
+		queryConstrain = fmt.Sprintf(" WHERE %s ORDER BY id ASC", queryConstrain)
 	}
 	return queryConstrain, args
 }
