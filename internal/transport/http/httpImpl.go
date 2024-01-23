@@ -23,7 +23,6 @@ func (a *apiImpl) StartHTTP() error {
 
 	err := router.Run(fmt.Sprintf(":%s", a.cfg.HTTP.HostPort))
 	if err != nil {
-		a.log.Debug("ocurred error StartHTTP", sl.Err(err))
 		return errors.Wrap(err, "ocurred error StartHTTP")
 	}
 	return nil
@@ -43,8 +42,7 @@ func (a *apiImpl) getUserHandler(c *gin.Context) {
 
 	id, err := strconv.Atoi(c.Param(ID))
 	if err != nil {
-
-		a.log.Debug("id not match type", sl.Err(err))
+		a.log.Error("id not match type", sl.Err(err))
 		c.JSON(http.StatusBadRequest, err)
 		return
 	}
@@ -53,7 +51,7 @@ func (a *apiImpl) getUserHandler(c *gin.Context) {
 
 	user, err := a.service.GetUser(c, id)
 	if err != nil {
-		a.log.Debug("ocurred error Get User", sl.Err(err))
+		a.log.Error("occurred error for GetUser", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -79,38 +77,38 @@ func (a *apiImpl) getUsersHandler(c *gin.Context) {
 	if qAge != "" {
 		age, err = strconv.Atoi(qAge)
 		if err != nil {
-			a.log.Debug("Age not match type", sl.Err(err))
+			a.log.Error("Age not match type", sl.Err(err))
 			c.JSON(http.StatusBadRequest, sl.Err(err))
 			return
 		}
 	}
 
-	rOffset := q.Get(OFFSET)
-	if rOffset != "" {
-		offset, err = strconv.Atoi(rOffset)
+	qOffset := q.Get(OFFSET)
+	if qOffset != "" {
+		offset, err = strconv.Atoi(qOffset)
 		if err != nil {
-			a.log.Debug("offset not match type", sl.Err(err))
+			a.log.Error("offset not match type", sl.Err(err))
 			c.JSON(http.StatusBadRequest, sl.Err(err))
 			return
 		}
 	}
 
-	rLimit := q.Get(LIMIT)
-	if rLimit != "" {
-		limit, err = strconv.Atoi(rLimit)
+	qLimit := q.Get(LIMIT)
+	if qLimit != "" {
+		limit, err = strconv.Atoi(qLimit)
 		if err != nil {
-			a.log.Debug("limit not match type", sl.Err(err))
+			a.log.Error("limit not match type", sl.Err(err))
 			c.JSON(http.StatusBadRequest, sl.Err(err))
 			return
 		}
 	}
 	userQuery := &service.QueryUsersFilter{
-		Name:        q.Get("name"),
-		SurName:     q.Get("surname"),
-		Patronymic:  q.Get("patronymic"),
+		Name:        q.Get(NAME),
+		SurName:     q.Get(SURNAME),
+		Patronymic:  q.Get(PATRONYMIC),
 		Age:         age,
-		Gender:      q.Get("gender"),
-		Nationality: q.Get("nationality"),
+		Gender:      q.Get(GENDER),
+		Nationality: q.Get(NATIONALITY),
 		Offset:      offset,
 		Limit:       limit,
 	}
@@ -119,7 +117,7 @@ func (a *apiImpl) getUsersHandler(c *gin.Context) {
 
 	users, err := a.service.GetUsers(c, userQuery)
 	if err != nil {
-		a.log.Debug("ocurred error Get Users", sl.Err(err))
+		a.log.Error("occurred error Get Users", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -138,7 +136,7 @@ func (a *apiImpl) addUserHandler(c *gin.Context) {
 	user := &service.User{}
 	if err := c.BindJSON(&user); err != nil {
 		log.Error("cant unmarshall", sl.Err(err))
-		c.JSON(http.StatusInternalServerError, err.Error())
+		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -146,7 +144,7 @@ func (a *apiImpl) addUserHandler(c *gin.Context) {
 
 	respUser, err := a.service.AddUser(c, user)
 	if err != nil {
-		a.log.Error("ocurred error for run add User", sl.Err(err))
+		a.log.Error("occurred error for run add User", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -162,9 +160,9 @@ func (a *apiImpl) delUserHandler(c *gin.Context) {
 	const op = "delUsers"
 	log := a.log.With(slog.String("op", op))
 
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param(ID))
 	if err != nil {
-		a.log.Debug("id not match type", sl.Err(err))
+		a.log.Error("id not match type", sl.Err(err))
 		c.JSON(http.StatusBadRequest, sl.Err(err))
 		return
 	}
@@ -173,7 +171,7 @@ func (a *apiImpl) delUserHandler(c *gin.Context) {
 
 	user, err := a.service.DeleteUser(c, id)
 	if err != nil {
-		a.log.Debug("ocurred error del User", sl.Err(err))
+		a.log.Error("occurred error del User", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -188,17 +186,17 @@ func (a *apiImpl) updateUserHandler(c *gin.Context) {
 	const op = "updateUsers"
 	log := a.log.With(slog.String("op", op))
 
-	user := &service.User{}
-	respUser := &service.User{}
+	user := service.User{}
 
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param(ID))
 	if err != nil {
-		a.log.Debug("id not match type", sl.Err(err))
+		a.log.Error("id not match type", sl.Err(err))
 		c.JSON(http.StatusBadRequest, sl.Err(err))
 		return
 	}
+
 	if err := c.BindJSON(&user); err != nil {
-		a.log.Debug("cant unmarshall update User", sl.Err(err))
+		a.log.Error("cant unmarshall update User", sl.Err(err))
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -207,9 +205,9 @@ func (a *apiImpl) updateUserHandler(c *gin.Context) {
 
 	log.Info("run update user", sl.Atr("User", user))
 
-	respUser, err = a.service.UpdateUser(c, user)
+	respUser, err := a.service.UpdateUser(c, &user)
 	if err != nil {
-		a.log.Debug("ocurred error update User", sl.Err(err))
+		a.log.Error("occurred error update User", sl.Err(err))
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}

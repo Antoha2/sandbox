@@ -10,12 +10,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-type natImpl struct {
+type nationalityImpl struct {
 	URL string
 }
 
-func NewGetNat(URL string) *natImpl {
-	return &natImpl{
+func NewGetNat(URL string) *nationalityImpl {
+	return &nationalityImpl{
 		URL: URL,
 	}
 }
@@ -31,9 +31,8 @@ type NationalityCountry struct {
 	Probability float32 `json:"probability"`
 }
 
-func (s *natImpl) GetNationality(ctx context.Context, name string) (string, error) {
+func (s *nationalityImpl) GetNationality(ctx context.Context, name string) (string, error) {
 
-	restResponse := new(response)
 	query := fmt.Sprintf("%s?name=%s", s.URL, name)
 	resp, err := http.Get(query)
 	if err != nil {
@@ -47,7 +46,8 @@ func (s *natImpl) GetNationality(ctx context.Context, name string) (string, erro
 		return "", errors.Wrap(err, "cant read Nationality ")
 	}
 
-	err = json.Unmarshal(body, restResponse)
+	res := response{}
+	err = json.Unmarshal(body, &res)
 	if err != nil {
 		return "", errors.Wrap(err, "cant Unmarshal Nationality ")
 	}
@@ -55,7 +55,7 @@ func (s *natImpl) GetNationality(ctx context.Context, name string) (string, erro
 	//choosing one option with the highest probability
 	var probability float32
 	var country string
-	for _, v := range restResponse.Country {
+	for _, v := range res.Country {
 		if v.Probability > probability {
 			probability = v.Probability
 			country = v.CountryId

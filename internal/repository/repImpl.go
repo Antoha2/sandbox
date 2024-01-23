@@ -11,115 +11,130 @@ import (
 //add user
 func (r *Rep) AddUser(ctx context.Context, user *RepUser) (*RepUser, error) {
 
-	respUser := RepUser{}
+	repUser := RepUser{}
+
 	query := "INSERT INTO users (name, surname, patronymic, age, gender, nationality) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, surname, patronymic, age, gender, nationality"
-	row := r.DB.QueryRow(query, user.Name, user.SurName, user.Patronymic, user.Age, user.Gender, user.Nationality)
-	if err := row.Scan(&respUser.Id, &respUser.Name, &respUser.SurName, &respUser.Patronymic, &respUser.Age, &respUser.Gender, &respUser.Nationality); err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("sql AddUser request failed %s", query))
+	row := r.DB.QueryRowContext(ctx, query, user.Name, user.SurName, user.Patronymic, user.Age, user.Gender, user.Nationality)
+	if err := row.Scan(&repUser.Id, &repUser.Name, &repUser.SurName, &repUser.Patronymic, &repUser.Age, &repUser.Gender, &repUser.Nationality); err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("sql insert User failed, query: %s", query))
 	}
-	return &respUser, nil
+
+	return &repUser, nil
 }
 
 //delete user
 func (r *Rep) DeleteUser(ctx context.Context, id int) (*RepUser, error) {
-	respUser := RepUser{}
+	repUser := RepUser{}
+
 	query := "DELETE FROM users WHERE id = $1 RETURNING id, name, surname, patronymic, age, gender, nationality"
-	row := r.DB.QueryRow(query, id)
-	if err := row.Scan(&respUser.Id, &respUser.Name, &respUser.SurName, &respUser.Patronymic, &respUser.Age, &respUser.Gender, &respUser.Nationality); err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("sql DelUser request failed %s", query))
+	row := r.DB.QueryRowContext(ctx, query, id)
+	if err := row.Scan(&repUser.Id, &repUser.Name, &repUser.SurName, &repUser.Patronymic, &repUser.Age, &repUser.Gender, &repUser.Nationality); err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("sql delete User failed, query: %s", query))
 	}
-	return &respUser, nil
+	return &repUser, nil
 }
 
 //get userS
 func (r *Rep) GetUsers(ctx context.Context, filter *RepQueryFilter) ([]*RepUser, error) {
 
 	users := make([]*RepUser, 0)
-	buildQuery, args := buildQueryConstrain(filter)
+	queryConstrain, args := buildQueryConstrain(filter)
 
-	query := fmt.Sprintf("SELECT id, name, surname, patronymic, age, gender, nationality FROM users%s", buildQuery)
-	stmtGet, err := r.DB.Query(query, args...)
+	query := fmt.Sprintf("SELECT id, name, surname, patronymic, age, gender, nationality FROM users%s LIMIT %d OFFSET %d", queryConstrain, filter.Limit, filter.Offset)
+	rows, err := r.DB.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("sql GetUsers query failed %s", query))
+		return nil, errors.Wrap(err, fmt.Sprintf("sql select Users failed, query: %s", query))
 	}
 
-	for stmtGet.Next() {
-		user := new(RepUser)
-		err := stmtGet.Scan(&user.Id, &user.Name, &user.SurName, &user.Patronymic, &user.Age, &user.Gender, &user.Nationality)
+	for rows.Next() {
+		user := RepUser{}
+		err := rows.Scan(&user.Id, &user.Name, &user.SurName, &user.Patronymic, &user.Age, &user.Gender, &user.Nationality)
 		if err != nil {
-			return nil, errors.Wrap(err, "sql GetUsers scan failed users")
+			return nil, errors.Wrap(err, "sql scan Users failed")
 		}
-		users = append(users, user)
+		users = append(users, &user)
+
 	}
+
 	return users, nil
 }
 
 //get user
 func (r *Rep) GetUser(ctx context.Context, id int) (*RepUser, error) {
+
 	user := RepUser{}
+
 	query := "SELECT id, name, surname, patronymic, age, gender, nationality FROM users WHERE id = $1"
-	row := r.DB.QueryRow(query, id)
+	row := r.DB.QueryRowContext(ctx, query, id)
 	if err := row.Scan(&user.Id, &user.Name, &user.SurName, &user.Patronymic, &user.Age, &user.Gender, &user.Nationality); err != nil {
-		return nil, errors.Wrap(err, "sql GetUsers scan failed users")
+		return nil, errors.Wrap(err, fmt.Sprintf("sql select User failed, query: %s", query))
 	}
 	return &user, nil
 }
 
 //update user
 func (r *Rep) UpdateUser(ctx context.Context, user *RepUser) (*RepUser, error) {
-	respUser := RepUser{}
+	repUser := RepUser{}
 	query := "UPDATE users SET name=$1, surname=$2, patronymic=$3, age=$4, gender=$5, nationality=$6 WHERE id=$7 RETURNING id, name, surname, patronymic, age, gender, nationality"
 
-	row := r.DB.QueryRow(query, user.Name, user.SurName, user.Patronymic, user.Age, user.Gender, user.Nationality, user.Id)
-	if err := row.Scan(&respUser.Id, &respUser.Name, &respUser.SurName, &respUser.Patronymic, &respUser.Age, &respUser.Gender, &respUser.Nationality); err != nil {
-		return nil, errors.Wrap(err, "sql UpdateUser scan failed users")
+	row := r.DB.QueryRowContext(ctx, query, user.Name, user.SurName, user.Patronymic, user.Age, user.Gender, user.Nationality, user.Id)
+	if err := row.Scan(&repUser.Id, &repUser.Name, &repUser.SurName, &repUser.Patronymic, &repUser.Age, &repUser.Gender, &repUser.Nationality); err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("sql update User failed, query: %s", query))
 	}
-	return &respUser, nil
+	return &repUser, nil
 }
 
 //build query string
 func buildQueryConstrain(filter *RepQueryFilter) (string, []any) {
 	i := 1
-	constrain := make([]string, 0, 6)
+	constrains := make([]string, 0, 6)
 	args := make([]any, 0, 6)
 	if filter.Name != "" {
 		s := fmt.Sprintf("name=$%d", i)
-		constrain = append(constrain, s)
-		args = append(args, filter.Name)
 		i++
+
+		constrains = append(constrains, s)
+		args = append(args, filter.Name)
 	}
 	if filter.SurName != "" {
 		s := fmt.Sprintf("surname=$%d", i)
-		constrain = append(constrain, s)
-		args = append(args, filter.SurName)
 		i++
+
+		constrains = append(constrains, s)
+		args = append(args, filter.SurName)
 	}
 	if filter.Patronymic != "" {
 		s := fmt.Sprintf("patronymic=$%d", i)
-		constrain = append(constrain, s)
-		args = append(args, filter.Patronymic)
 		i++
+
+		constrains = append(constrains, s)
+		args = append(args, filter.Patronymic)
 	}
 	if filter.Age != 0 {
 		s := fmt.Sprintf("age=$%d", i)
-		constrain = append(constrain, s)
-		args = append(args, filter.Age)
 		i++
+
+		constrains = append(constrains, s)
+		args = append(args, filter.Age)
 	}
 	if filter.Gender != "" {
 		s := fmt.Sprintf("gender=$%d", i)
-		constrain = append(constrain, s)
-		args = append(args, filter.Gender)
 		i++
+
+		constrains = append(constrains, s)
+		args = append(args, filter.Gender)
 	}
 	if filter.Nationality != "" {
 		s := fmt.Sprintf("nationality=$%d", i)
-		constrain = append(constrain, s)
-		args = append(args, filter.Nationality)
 		i++
+
+		constrains = append(constrains, s)
+		args = append(args, filter.Nationality)
 	}
 
-	query := fmt.Sprintf(" WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d", strings.Join(constrain, " AND "), filter.Limit, filter.Offset)
-
-	return query, args
+	queryConstrain := strings.Join(constrains, " AND ")
+	if queryConstrain != "" {
+		queryConstrain = fmt.Sprintf(" WHERE %s ORDER BY id ASC", constrains)
+	}
+	return queryConstrain, args
 }

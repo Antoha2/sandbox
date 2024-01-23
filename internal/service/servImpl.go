@@ -81,11 +81,8 @@ func (s *servImpl) DeleteUser(ctx context.Context, id int) (*User, error) {
 //add user
 func (s *servImpl) AddUser(ctx context.Context, user *User) (*User, error) {
 
-	reposUser := &repository.RepUser{}
-
 	age, err := s.ageClient.GetAge(ctx, user.Name)
 	if err != nil {
-		//s.log.Debug("by username didn't age", user.Name, user.Age)
 		return nil, errors.Wrap(err, "occurate error for request provider get age")
 	}
 	s.log.Debug("by username got age", sl.Atr("age", age), sl.Atr("name", user.Name))
@@ -100,8 +97,6 @@ func (s *servImpl) AddUser(ctx context.Context, user *User) (*User, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "occurate error for request provider get nationality")
 	}
-	//s.log.Debug(fmt.Sprintf("by username %s got nationality %s", user.Name, user.Nationality))
-
 	s.log.Debug("by username got nationality", sl.Atr("nationality", nationality), sl.Atr("name", user.Name))
 
 	repUser := &repository.RepUser{
@@ -122,7 +117,7 @@ func (s *servImpl) AddUser(ctx context.Context, user *User) (*User, error) {
 		Id:          repUser.Id,
 		Name:        repUser.Name,
 		SurName:     repUser.SurName,
-		Patronymic:  reposUser.Patronymic,
+		Patronymic:  repUser.Patronymic,
 		Age:         repUser.Age,
 		Gender:      repUser.Gender,
 		Nationality: repUser.Nationality,

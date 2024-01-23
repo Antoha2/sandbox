@@ -29,7 +29,6 @@ type response struct {
 
 func (s *genderImpl) GetGender(ctx context.Context, name string) (string, error) {
 
-	restResponse := new(response)
 	query := fmt.Sprintf("%s?name=%s", s.URL, name)
 	resp, err := http.Get(query)
 	if err != nil {
@@ -43,9 +42,10 @@ func (s *genderImpl) GetGender(ctx context.Context, name string) (string, error)
 		return "", errors.Wrap(err, "cant read Gender ")
 	}
 
-	err = json.Unmarshal(body, restResponse)
+	res := response{}
+	err = json.Unmarshal(body, &res)
 	if err != nil {
 		return "", errors.Wrap(err, "cant unmarshall Gender ")
 	}
-	return restResponse.Gender, nil
+	return res.Gender, nil
 }

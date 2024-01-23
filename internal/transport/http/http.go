@@ -9,11 +9,6 @@ import (
 	"github.com/Antoha2/sandbox/internal/service"
 )
 
-const ID = "id"
-const AGE = "age"
-const LIMIT = "limit"
-const OFFSET = "offset"
-
 type Service interface {
 	GetUsers(ctx context.Context, filter *service.QueryUsersFilter) ([]*service.User, error)
 	GetUser(ctx context.Context, id int) (*service.User, error)

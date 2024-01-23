@@ -28,7 +28,6 @@ type response struct {
 
 func (s *ageImpl) GetAge(ctx context.Context, name string) (int, error) {
 
-	restResponse := new(response)
 	query := fmt.Sprintf("%s?name=%s", s.URL, name)
 	resp, err := http.Get(query)
 	if err != nil {
@@ -42,9 +41,10 @@ func (s *ageImpl) GetAge(ctx context.Context, name string) (int, error) {
 
 	defer resp.Body.Close()
 
-	err = json.Unmarshal(body, restResponse)
+	res := response{}
+	err = json.Unmarshal(body, &res)
 	if err != nil {
 		return 0, errors.Wrap(err, "cant unmarshal Age ")
 	}
-	return restResponse.Age, nil
+	return res.Age, nil
 }

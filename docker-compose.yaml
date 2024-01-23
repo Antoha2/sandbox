@@ -4,7 +4,6 @@ services:
   app:
     container_name: app
     image: golang:1.21.6
-  
     depends_on:
        - postgres
        - migrate

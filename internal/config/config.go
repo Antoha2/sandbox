@@ -1,17 +1,14 @@
 package config
 
 import (
-	"log"
-
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Env      string `env:"ENV" env-default:"local"`
-	HTTP     HTTPConfig
-	DBConfig DBConfig
-	//MigrationsPath  string
+	Env            string `env:"ENV" env-default:"local"`
+	HTTP           HTTPConfig
+	DBConfig       DBConfig
 	URLAge         string `env:"URL_AGE"`
 	URLGender      string `env:"URL_GENDER"`
 	URLNationality string `env:"URL_NATIONALITY"`
@@ -34,7 +31,7 @@ type HTTPConfig struct {
 func MustLoad() *Config {
 
 	if err := godotenv.Load(); err != nil {
-		log.Print("No .env file found")
+		panic("No .env file found" + err.Error())
 	}
 	var cfg Config
 	if err := cleanenv.ReadEnv(&cfg); err != nil {
