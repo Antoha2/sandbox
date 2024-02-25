@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -88,7 +87,6 @@ func (r *Rep) UpdateUser(ctx context.Context, user *RepUser) (*RepUser, error) {
 
 //build query string
 func buildQueryConstrain(filter *RepQueryFilter) (string, []any) {
-	log.Println("2!!!!!!!!!!!!!!!!!!!!!!!! ", filter)
 
 	i := 1
 	constrains := make([]string, 0, 6)

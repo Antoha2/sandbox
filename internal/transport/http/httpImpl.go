@@ -112,7 +112,6 @@ func (a *apiImpl) getUsersHandler(c *gin.Context) {
 		Offset:      offset,
 		Limit:       limit,
 	}
-	fmt.Println("123123!!!!!!!!!!!!!!!!!!!!!!!!!!!", userQuery)
 	log.Info("run get Users", sl.Atr("filter", userQuery))
 
 	users, err := a.service.GetUsers(c, userQuery)

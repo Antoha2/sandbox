@@ -20,7 +20,7 @@ type DBConfig struct {
 	Host     string `env:"DB_HOST" env-default:"localhost"`
 	Port     string `env:"DB_PORT" env-default:"5432"`
 	Dbname   string `env:"DB_DBNAME" env-default:"test"`
-	Sslmode  string `env:"DB_SSLMODE" env-default:""`
+	Sslmode  string `env:"DB_SSLMODE" env-default:"disable"`
 }
 
 type HTTPConfig struct {
