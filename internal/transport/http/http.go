@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/Antoha2/sandbox/internal/config"
-	"github.com/Antoha2/sandbox/internal/service"
+	"github.com/Antoha2/catAuto/internal/config"
+	"github.com/Antoha2/catAuto/internal/service"
 )
 
 type Service interface {

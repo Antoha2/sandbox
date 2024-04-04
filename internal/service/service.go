@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/Antoha2/sandbox/internal/config"
-	"github.com/Antoha2/sandbox/internal/repository"
+	"github.com/Antoha2/catAuto/internal/config"
+	"github.com/Antoha2/catAuto/internal/repository"
 )
 
 const DefaultPropertyAge = 0
